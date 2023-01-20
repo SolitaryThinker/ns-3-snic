@@ -161,10 +161,11 @@ SnicNetDevice::GetTypeId()
 }
 
 SnicNetDevice::SnicNetDevice()
-    : m_txMachineState(READY),
-      m_channel(nullptr),
-      m_linkUp(false),
-      m_currentPkt(nullptr)
+    : m_node(nullptr),
+      //m_txMachineState(READY),
+      //m_channel(nullptr),
+      //m_linkUp(false),
+      //m_currentPkt(nullptr)
 {
     NS_LOG_FUNCTION(this);
 }

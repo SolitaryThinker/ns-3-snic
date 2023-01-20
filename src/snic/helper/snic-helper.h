@@ -83,8 +83,9 @@ class SnicHelper
     void DisableFlowControl();
 
     /**
-     * \param c a set of nodes
-     * \return a NetDeviceContainer for nodes
+     * \param node node containing snic
+     * \param c a set of connected netdevices
+     * \return a NetDeviceContainer for connected nodes
      *
      * We want to be able to install the same instance of NetDevice onto a
      * group of Nodes to represent multi-homed setup.
@@ -92,27 +93,7 @@ class SnicHelper
      * XXX: not sure how this can be done yet. The NetDevice needs to have one
      * link leaving the group of nodes to a channel or somewhere.
      */
-    NetDeviceContainer Install(NodeContainer c);
-
-    /**
-     * \param a first node
-     * \param b second node
-     * \return a NetDeviceContainer for nodes
-     *
-     * Saves you from having to construct a temporary NodeContainer.
-     * Also, if MPI is enabled, for distributed simulations,
-     * appropriate remote point-to-point channels are created.
-     */
-    NetDeviceContainer Install(Ptr<Node> a, Ptr<Node> b);
-
-    /**
-     * \param a first node
-     * \param bName name of second node
-     * \return a NetDeviceContainer for nodes
-     *
-     * Saves you from having to construct a temporary NodeContainer.
-     */
-    NetDeviceContainer Install(Ptr<Node> a, std::string bName);
+    NetDeviceContainer Install(Ptr<Node> node, NetDeviceContainer c);
 
     /**
      * \param aName Name of first node
@@ -121,16 +102,7 @@ class SnicHelper
      *
      * Saves you from having to construct a temporary NodeContainer.
      */
-    NetDeviceContainer Install(std::string aName, Ptr<Node> b);
-
-    /**
-     * \param aNode Name of first node
-     * \param bNode Name of second node
-     * \return a NetDeviceContainer for nodes
-     *
-     * Saves you from having to construct a temporary NodeContainer.
-     */
-    NetDeviceContainer Install(std::string aNode, std::string bNode);
+    NetDeviceContainer Install(std::string nodeName, NetDeviceContainer c);
   private:
     /**
      * \brief Enable pcap output the indicated net device.

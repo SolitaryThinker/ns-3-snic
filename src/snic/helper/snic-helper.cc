@@ -214,23 +214,28 @@ SnicHelper::EnableAsciiInternal(Ptr<OutputStreamWrapper> stream,
 }
 
 NetDeviceContainer
-SnicHelper::Install(NodeContainer c)
+SnicHelper::Install(Ptr<Node> node, NetDeviceContainer c)
 {
-  NetDeviceContainer container;
+  NS_LOG_FUNCTION_NOARGS();
+  NS_LOG_LOGIC("**** Install SNIC device on node " << node->GetId());
 
-  // single NetDevice for all these nodes
+  NetDeviceContainer devs;
   Ptr<SnicNetDevice> dev = m_deviceFactory.Create<SnicNetDevice>();
-  dev->SetAddress(Mac48Address::Allocate());
-  for (NodeContainer::Iterator i = c.Begin(); i != c.End(); ++i)
+  devs.Add(dev);
+  node->AddDevice(dev);
+
+  for (NetDeviceContainer::Iterator i = c.Begin(); i != c.End(); ++i)
   {
-      //Install(*i);
-
-    Ptr<Node> node = *i;
-
-    Ptr<Queue<Packet>> queue = m_queueFactory.Create<Queue<Packet>>();
-    c->AddDevice(dev);
-    dev->SetQueue(queue);
+      NS_LOG_LOGIC("**** Add SnicPort " << *i);
+      dev->AddSnicPort(*i);
   }
+  return devs;
+}
 
-  return container;
+NetDeviceContainer
+SnicHelper::Install(std::string nodeName, NetDeviceContainer c)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    Ptr<Node> node = Names::Find<Node>(nodeName);
+    return Install(node, c);
 }
