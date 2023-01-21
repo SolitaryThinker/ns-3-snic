@@ -5,14 +5,12 @@
  */
 
 #include "snic-net-device.h"
-#include "snic-channel.h"
 
 #include "ns3/error-model.h"
 #include "ns3/llc-snap-header.h"
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
 #include "ns3/pointer.h"
-#include "ns3/queue.h"
 #include "ns3/simulator.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/uinteger.h"
@@ -202,7 +200,6 @@ SnicNetDevice::DoDispose()
     m_channel = nullptr;
     m_receiveErrorModel = nullptr;
     m_currentPkt = nullptr;
-    m_queue = nullptr;
     NetDevice::DoDispose();
 }
 
@@ -303,79 +300,10 @@ SnicNetDevice::Attach(Ptr<PointToPointChannel> ch)
 }
 
 void
-SnicNetDevice::SetQueue(Ptr<Queue<Packet>> q)
-{
-    NS_LOG_FUNCTION(this << q);
-    m_queue = q;
-}
-
-void
 SnicNetDevice::SetReceiveErrorModel(Ptr<ErrorModel> em)
 {
     NS_LOG_FUNCTION(this << em);
     m_receiveErrorModel = em;
-}
-
-void
-SnicNetDevice::Receive(Ptr<Packet> packet)
-{
-    NS_LOG_FUNCTION(this << packet);
-    uint16_t protocol = 0;
-
-    if (m_receiveErrorModel && m_receiveErrorModel->IsCorrupt(packet))
-    {
-        //
-        // If we have an error model and it indicates that it is time to lose a
-        // corrupted packet, don't forward this packet up, let it go.
-        //
-        m_phyRxDropTrace(packet);
-    }
-    else
-    {
-        //
-        // Hit the trace hooks.  All of these hooks are in the same place in this
-        // device because it is so simple, but this is not usually the case in
-        // more complicated devices.
-        //
-        m_snifferTrace(packet);
-        m_promiscSnifferTrace(packet);
-        m_phyRxEndTrace(packet);
-
-        //
-        // Trace sinks will expect complete packets, not packets without some of the
-        // headers.
-        //
-        Ptr<Packet> originalPacket = packet->Copy();
-
-        //
-        // Strip off the point-to-point protocol header and forward this packet
-        // up the protocol stack.  Since this is a simple point-to-point link,
-        // there is no difference in what the promisc callback sees and what the
-        // normal receive callback sees.
-        //
-        ProcessHeader(packet, protocol);
-
-        if (!m_promiscCallback.IsNull())
-        {
-            m_macPromiscRxTrace(originalPacket);
-            m_promiscCallback(this,
-                              packet,
-                              protocol,
-                              GetRemote(),
-                              GetAddress(),
-                              NetDevice::PACKET_HOST);
-        }
-
-        m_macRxTrace(originalPacket);
-        m_rxCallback(this, packet, protocol, GetRemote());
-    }
-}
-
-Ptr<Queue<Packet>>
-SnicNetDevice::GetQueue() const
-{
-    NS_LOG_FUNCTION(this);
-    return m_queue;
 }
 
 void
@@ -499,51 +427,8 @@ SnicNetDevice::IsBridge() const
 bool
 SnicNetDevice::Send(Ptr<Packet> packet, const Address& dest, uint16_t protocolNumber)
 {
-    NS_LOG_FUNCTION(this << packet << dest << protocolNumber);
-    NS_LOG_LOGIC("p=" << packet << ", dest=" << &dest);
-    NS_LOG_LOGIC("UID is " << packet->GetUid());
-
-    //
-    // If IsLinkUp() is false it means there is no channel to send any packet
-    // over so we just hit the drop trace on the packet and return an error.
-    //
-    if (IsLinkUp() == false)
-    {
-        m_macTxDropTrace(packet);
-        return false;
-    }
-
-    //
-    // Stick a point to point protocol header on the packet in preparation for
-    // shoving it out the door.
-    //
-    AddHeader(packet, protocolNumber);
-
-    m_macTxTrace(packet);
-
-    //
-    // We should enqueue and dequeue the packet to hit the tracing hooks.
-    //
-    if (m_queue->Enqueue(packet))
-    {
-        //
-        // If the channel is ready for transition we send the packet right now
-        //
-        if (m_txMachineState == READY)
-        {
-            packet = m_queue->Dequeue();
-            m_snifferTrace(packet);
-            m_promiscSnifferTrace(packet);
-            bool ret = TransmitStart(packet);
-            return ret;
-        }
-        return true;
-    }
-
-    // Enqueue may fail (overflow)
-
-    m_macTxDropTrace(packet);
-    return false;
+    NS_LOG_FUNCTION_NOARGS();
+    return SendFrom(packet, m_address, dest, protocolNumber);
 }
 
 bool
@@ -552,8 +437,22 @@ SnicNetDevice::SendFrom(Ptr<Packet> packet,
                                 const Address& dest,
                                 uint16_t protocolNumber)
 {
-    NS_LOG_FUNCTION(this << packet << source << dest << protocolNumber);
-    return false;
+    NS_LOG_FUNCTION_NOARGS();
+
+    ofpbuf* buffer = BufferFromPacket(packet, src, dest, GetMtu(), protocolNumber);
+
+    uint32_t packet_uid = save_buffer(buffer);
+    ofi::SwitchPacketMetadata data;
+    data.packet = packet;
+    data.buffer = buffer;
+    data.protocolNumber = protocolNumber;
+    data.src = Address(src);
+    data.dst = Address(dest);
+    m_packetData.insert(std::make_pair(packet_uid, data));
+
+    RunThroughFlowTable(packet_uid, -1);
+
+    return true;
 }
 
 Ptr<Node>
@@ -593,13 +492,6 @@ SnicNetDevice::SupportsSendFrom() const
 {
     NS_LOG_FUNCTION(this);
     return false;
-}
-
-void
-SnicNetDevice::DoMpiReceive(Ptr<Packet> p)
-{
-    NS_LOG_FUNCTION(this << p);
-    Receive(p);
 }
 
 Address
@@ -666,7 +558,5 @@ SnicNetDevice::EtherToPpp(uint16_t proto)
     }
     return 0;
 }
-
-} // namespace ns3
 
 } // namespace ns3

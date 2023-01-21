@@ -7,12 +7,9 @@
 #ifndef SNIC_HELPER_H
 #define SNIC_HELPER_H
 
-#include "ns3/snic.h"
-
 #include "ns3/net-device-container.h"
 #include "ns3/node-container.h"
 #include "ns3/object-factory.h"
-#include "ns3/queue.h"
 #include "ns3/trace-helper.h"
 
 #include <string>
@@ -32,21 +29,6 @@ class SnicHelper
     ~SnicHelper() override
     {
     }
-
-    /**
-     * Each point to point net device must have a queue to pass packets through.
-     * This method allows one to set the type of the queue that is automatically
-     * created when the device is created and attached to a node.
-     *
-     * \tparam Ts \deduced Argument types
-     * \param type the type of queue
-     * \param [in] args Name and AttributeValue pairs to set.
-     *
-     * Set the type of queue to create and associated to each
-     * PointToPointNetDevice created through PointToPointHelper::Install.
-     */
-    template <typename... Ts>
-    void SetQueue(std::string type, Ts&&... args);
 
     /**
      * Set an attribute value to be propagated to each NetDevice created by the
@@ -136,7 +118,6 @@ class SnicHelper
                              Ptr<NetDevice> nd,
                              bool explicitFilename) override;
 
-    ObjectFactory m_queueFactory;   //!< Queue Factory
     ObjectFactory m_channelFactory; //!< Channel Factory
     ObjectFactory m_deviceFactory;  //!< Device Factory
     bool m_enableFlowControl;       //!< whether to enable flow control

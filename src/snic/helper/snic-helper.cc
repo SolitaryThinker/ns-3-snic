@@ -4,18 +4,16 @@
  * Author: Will Lin <wlsaidhi@gmail.com>
  */
 
+#include "snic-helper.h"
+
 #include "ns3/abort.h"
 #include "ns3/config.h"
 #include "ns3/log.h"
 #include "ns3/names.h"
 #include "ns3/net-device-queue-interface.h"
 #include "ns3/packet.h"
-#include "ns3/point-to-point-channel.h"
-#include "ns3/point-to-point-net-device.h"
 #include "ns3/simulator.h"
-
-#include "snic-helper.h"
-
+#include "ns3/snic-net-device.h"
 #include "ns3/trace-helper.h"
 
 namespace ns3
@@ -25,7 +23,6 @@ NS_LOG_COMPONENT_DEFINE("SnicHelper");
 
 SnicHelper::SnicHelper()
 {
-  m_queueFactory.SetTypeId("ns3::DropTailQueue<Packet>");
   m_deviceFactory.SetTypeId("ns3::SnicNetDevice");
   m_channelFactory.SetTypeId("ns3::SnicChannel");
   m_enableFlowControl = true;
@@ -239,3 +236,4 @@ SnicHelper::Install(std::string nodeName, NetDeviceContainer c)
     Ptr<Node> node = Names::Find<Node>(nodeName);
     return Install(node, c);
 }
+} // namespace ns3

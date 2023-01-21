@@ -7,11 +7,21 @@
 #ifndef SNIC_NET_DEVICE_H
 #define SNIC_NET_DEVICE_H
 
-#include "ns3/net-device.h"
-#include "ns3/nstime.h"
-#include "ns3/random-variable-stream.h"
+#include "ns3/arp-header.h"
+#include "ns3/arp-l3-protocol.h"
+#include "ns3/bridge-channel.h"
+#include "ns3/enum.h"
+#include "ns3/ethernet-header.h"
+#include "ns3/integer.h"
+#include "ns3/ipv4-l3-protocol.h"
+#include "ns3/log.h"
+#include "ns3/mac48-address.h"
+#include "ns3/node.h"
 #include "ns3/simulator.h"
-#include "ns3/traced-callback.h"
+#include "ns3/string.h"
+#include "ns3/tcp-header.h"
+#include "ns3/udp-header.h"
+#include "ns3/uinteger.h"
 
 #include <map>
 #include <stdint.h>
@@ -20,10 +30,11 @@
 
 namespace ns3
 {
-  class Node;
+class Node;
 
-  class SnicNetDevice : public NetDevice
-  {
+class SnicNetDevice : public NetDevice
+{
+  public:
     /**
      * \brief Get the type ID.
      * \return The object TypeId.
@@ -55,7 +66,8 @@ namespace ns3
      */
     void AddSnicPort(Ptr<NetDevice> snicPort);
     /**
-     * \brief Gets the number of snic connected 'ports', i.e., the NetDevices currently connected to snic.
+     * \brief Gets the number of snic connected 'ports', i.e., the NetDevices currently connected
+     * to snic.
      *
      * \return the number of snic connected ports.
      */
@@ -75,14 +87,6 @@ namespace ns3
     void SetAddress(Address address) override;
     Address GetAddress() const override;
     bool SetMtu(const uint16_t mtu) override;
-
-    /**
-     * \brief Returns the link-layer MTU for this interface.
-     * If the link-layer MTU is smaller than IPv6's minimum MTU (\RFC{4944}),
-     * 1280 will be returned.
-     *
-     * \return The link-level MTU in bytes for this interface.
-     */
     uint16_t GetMtu() const override;
     bool IsLinkUp() const override;
     void AddLinkChangeCallback(Callback<void> callback) override;
@@ -124,6 +128,7 @@ namespace ns3
                            const Address& src,
                            const Address& dst,
                            PacketType packetType);
+
   private:
     uint16_t m_num_hosts_connected;
     uint16_t m_num_ports;
@@ -219,14 +224,6 @@ namespace ns3
      * attached.
      */
     Ptr<PointToPointChannel> m_channel;
-
-    /**
-     * The Queue which this PointToPointNetDevice uses as a packet source.
-     * Management of this Queue has been delegated to the PointToPointNetDevice
-     * and it has the responsibility for deletion.
-     * \see class DropTailQueue
-     */
-    Ptr<Queue<Packet>> m_queue;
 
     /**
      * Error model for receive packet events
