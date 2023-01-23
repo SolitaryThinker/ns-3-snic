@@ -46,8 +46,7 @@ SnicHelper::DisableFlowControl()
     m_enableFlowControl = false;
 }
 
-}
-
+/*
 void
 SnicHelper::EnablePcapInternal(std::string prefix,
                                        Ptr<NetDevice> nd,
@@ -209,6 +208,7 @@ SnicHelper::EnableAsciiInternal(Ptr<OutputStreamWrapper> stream,
     Config::Connect(oss.str(),
                     MakeBoundCallback(&AsciiTraceHelper::DefaultDropSinkWithContext, stream));
 }
+*/
 
 NetDeviceContainer
 SnicHelper::Install(Ptr<Node> node, NetDeviceContainer c)

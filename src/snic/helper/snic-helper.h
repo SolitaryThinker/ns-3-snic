@@ -26,9 +26,6 @@ class SnicHelper
 {
   public:
     SnicHelper();
-    ~SnicHelper() override
-    {
-    }
 
     /**
      * Set an attribute value to be propagated to each NetDevice created by the
@@ -97,10 +94,10 @@ class SnicHelper
      * \param promiscuous If true capture all possible packets available at the device.
      * \param explicitFilename Treat the prefix as an explicit filename if true
      */
-    void EnablePcapInternal(std::string prefix,
-                            Ptr<NetDevice> nd,
-                            bool promiscuous,
-                            bool explicitFilename) override;
+    // void EnablePcapInternal(std::string prefix,
+    // Ptr<NetDevice> nd,
+    // bool promiscuous,
+    // bool explicitFilename) override;
 
     /**
      * \brief Enable ascii trace output on the indicated net device.
@@ -113,10 +110,10 @@ class SnicHelper
      * \param nd Net device for which you want to enable tracing.
      * \param explicitFilename Treat the prefix as an explicit filename if true
      */
-    void EnableAsciiInternal(Ptr<OutputStreamWrapper> stream,
-                             std::string prefix,
-                             Ptr<NetDevice> nd,
-                             bool explicitFilename) override;
+    // void EnableAsciiInternal(Ptr<OutputStreamWrapper> stream,
+    // std::string prefix,
+    // Ptr<NetDevice> nd,
+    // bool explicitFilename) override;
 
     ObjectFactory m_channelFactory; //!< Channel Factory
     ObjectFactory m_deviceFactory;  //!< Device Factory

@@ -18,6 +18,7 @@ build_lib(
                  helper/snic-helper.h
     LIBRARIES_TO_LINK ${libcore}
                       ${libinternet}
+                      #${libnetwork}
     TEST_SOURCES test/snic-test-suite.cc
                  ${examples_as_tests_sources}
 )

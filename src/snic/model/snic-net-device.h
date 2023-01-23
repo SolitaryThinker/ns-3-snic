@@ -129,223 +129,264 @@ class SnicNetDevice : public NetDevice
                            const Address& dst,
                            PacketType packetType);
 
+    /**
+     * \brief Learns the port a MAC address is sending from
+     * \param source source address
+     * \param port the port the source is sending from
+     */
+    void Learn(Mac48Address source, Ptr<NetDevice> port);
+
+    /**
+     * \brief Gets the port associated to a source address
+     * \param source the source address
+     * \returns the port the source is associated to, or NULL if no association is known.
+     */
+    Ptr<NetDevice> GetLearnedState(Mac48Address source);
+
   private:
     uint16_t m_num_hosts_connected;
     uint16_t m_num_ports;
-    /**
-     * \brief Dispose of the object
-     */
-    void DoDispose() override;
 
     /**
-     * \returns the address of the remote device connected to this device
-     * through the point to point channel.
-     */
-    Address GetRemote() const;
-
-    /**
-     * Adds the necessary headers and trailers to a packet of data in order to
-     * respect the protocol implemented by the agent.
-     * \param p packet
-     * \param protocolNumber protocol number
-     */
-    void AddHeader(Ptr<Packet> p, uint16_t protocolNumber);
-
-    /**
-     * Removes, from a packet of data, all headers and trailers that
-     * relate to the protocol implemented by the agent
-     * \param p Packet whose headers need to be processed
-     * \param param An integer parameter that can be set by the function
-     * \return Returns true if the packet should be forwarded up the
-     * protocol stack.
-     */
-    bool ProcessHeader(Ptr<Packet> p, uint16_t& param);
-
-    /**
-     * Start Sending a Packet Down the Wire.
+     * Add a flow.
      *
-     * The TransmitStart method is the method that is used internally in the
-     * PointToPointNetDevice to begin the process of sending a packet out on
-     * the channel.  The corresponding method is called on the channel to let
-     * it know that the physical device this class represents has virtually
-     * started sending signals.  An event is scheduled for the time at which
-     * the bits have been completely transmitted.
+     * Possible error numbers: ENOMEM, ENOBUFS, ESRCH
      *
-     * \see PointToPointChannel::TransmitStart ()
-     * \see TransmitComplete()
-     * \param p a reference to the packet to send
-     * \returns true if success, false on failure
+     * \param ofm The flow data to add.
+     * \return 0 if everything's ok, otherwise an error number.
      */
-    bool TransmitStart(Ptr<Packet> p);
+    // int AddFlow(const ofp_flow_mod* ofm);
 
     /**
-     * Stop Sending a Packet Down the Wire and Begin the Interframe Gap.
+     * Modify a flow.
      *
-     * The TransmitComplete method is used internally to finish the process
-     * of sending a packet out on the channel.
+     * \param ofm The flow data to modify.
+     * \return 0 if everything's ok, otherwise an error number.
      */
-    void TransmitComplete();
+    // int ModFlow(const ofp_flow_mod* ofm);
 
     /**
-     * \brief Make the link up and running
+     * Send packets out all the ports except the originating one
      *
-     * It calls also the linkChange callback.
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param in_port The index of the port the Packet was initially received on. This port doesn't
+     * forward when flooding.
+     * \param flood If true, don't send out on the ports with flooding disabled.
+     * \return 0 if everything's ok, otherwise an error number.
      */
-    void NotifyLinkUp();
+    int OutputAll(uint32_t packet_uid, int in_port, bool flood);
 
     /**
-     * Enumeration of the states of the transmit machine of the net device.
+     * Sends a copy of the Packet over the provided output port
+     *
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param out_port Output port.
      */
-    enum TxMachineState
+    void OutputPacket(uint32_t packet_uid, int out_port);
+
+    /**
+     * Seeks to send out a Packet over the provided output port. This is called generically
+     * when we may or may not know the specific port we're outputting on. There are many
+     * pre-set types of port options besides a Port that's hooked to our OpenFlowSwitchNetDevice.
+     * For example, it could be outputting as a flood, or seeking to output to the controller.
+     *
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param in_port The index of the port the Packet was initially received on.
+     * \param out_port The port we want to output on.
+     * \param ignore_no_fwd If true, Ports that are set to not forward are forced to forward.
+     */
+    void OutputPort(uint32_t packet_uid, int in_port, int out_port, bool ignore_no_fwd);
+
+    /**
+     * Sends a copy of the Packet to the controller. If the packet can be saved
+     * in an OpenFlow buffer, then only the first 'max_len' bytes of the packet
+     * are sent; otherwise, all of the packet is sent.
+     *
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param in_port The index of the port the Packet was initially received on.
+     * \param max_len The maximum number of bytes that the caller wants to be sent; a value of 0
+     * indicates the entire packet should be sent.
+     * \param reason Why the packet is being sent.
+     */
+    void OutputControl(uint32_t packet_uid, int in_port, size_t max_len, int reason);
+
+    /**
+     * If an error message happened during the controller's request, send it to the controller.
+     *
+     * \param type The type of error.
+     * \param code The error code.
+     * \param data The faulty data that lead to the error.
+     * \param len The length of the faulty data.
+     */
+    void SendErrorMsg(uint16_t type, uint16_t code, const void* data, size_t len);
+
+    /**
+     * Send a reply about this OpenFlow switch's features to the controller.
+     *
+     * List of capabilities and actions to support are found in the specification
+     * <www.openflowswitch.org/documents/openflow-spec-v0.8.9.pdf>.
+     *
+     * Supported capabilities and actions are defined in the openflow interface.
+     * To recap, flow status, flow table status, port status, virtual port table
+     * status can all be requested. It can also transmit over multiple physical
+     * interfaces.
+     *
+     * It supports every action: outputting over a port, and all of the flow table
+     * manipulation actions: setting the 802.1q VLAN ID, the 802.1q priority,
+     * stripping the 802.1 header, setting the Ethernet source address and destination,
+     * setting the IP source address and destination, setting the TCP/UDP source address
+     * and destination, and setting the MPLS label and EXP bits.
+     *
+     * \attention Capabilities STP (Spanning Tree Protocol) and IP packet
+     * reassembly are not currently supported.
+     *
+     */
+    void SendFeaturesReply();
+
+    /**
+     * Send a reply to the controller that a specific flow has expired.
+     *
+     * \param flow The flow that expired.
+     * \param reason The reason for sending this expiration notification.
+     */
+    // void SendFlowExpired(sw_flow* flow, enum ofp_flow_expired_reason reason);
+
+    /**
+     * Send a reply about a Port's status to the controller.
+     *
+     * \param p The port to get status from.
+     * \param status The reason for sending this reply.
+     */
+    // void SendPortStatus(ofi::Port p, uint8_t status);
+
+    /**
+     * Send a reply about this OpenFlow switch's virtual port table features to the controller.
+     */
+    void SendVPortTableFeatures();
+
+    /**
+     * Send a message to the controller. This method is the key
+     * to communicating with the controller, it does the actual
+     * sending. The other Send methods call this one when they
+     * are ready to send a message.
+     *
+     * \param buffer Buffer of the message to send out.
+     * \return 0 if successful, otherwise an error number.
+     */
+    // int SendOpenflowBuffer(ofpbuf* buffer);
+
+    /**
+     * Run the packet through the flow table. Looks up in the flow table for a match.
+     * If it doesn't match, it forwards the packet to the registered controller, if the flag is set.
+     *
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param port The port this packet was received over.
+     * \param send_to_controller If set, sends to the controller if the packet isn't matched.
+     */
+    void RunThroughFlowTable(uint32_t packet_uid, int port, bool send_to_controller = true);
+
+    /**
+     * Run the packet through the vport table. As with AddVPort,
+     * this doesn't have an understood use yet.
+     *
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param port The port this packet was received over.
+     * \param vport The virtual port this packet identifies itself by.
+     * \return 0 if everything's ok, otherwise an error number.
+     */
+    int RunThroughVPortTable(uint32_t packet_uid, int port, uint32_t vport);
+
+    /**
+     * Called by RunThroughFlowTable on a scheduled delay
+     * to account for the flow table lookup overhead.
+     *
+     * \param key Matching key to look up in the flow table.
+     * \param buffer Buffer of the packet received.
+     * \param packet_uid Packet UID; used to fetch the packet and its metadata.
+     * \param port The port the packet was received over.
+     * \param send_to_controller
+     */
+    // void FlowTableLookup(sw_flow_key key,
+    // ofpbuf* buffer,
+    // uint32_t packet_uid,
+    // int port,
+    // bool send_to_controller);
+
+    /**
+     * Update the port status field of the switch port.
+     * A non-zero return value indicates some field has changed.
+     *
+     * \param p A reference to a Port; used to change its config and flag fields.
+     * \return true if the status of the Port is changed, false if unchanged (was already the right
+     * status).
+     */
+    // int UpdatePortStatus(ofi::Port& p);
+
+    /**
+     * Fill out a description of the switch port.
+     *
+     * \param p The port to get the description from.
+     * \param desc A pointer to the description message; used to fill the description message with
+     * the data from the port.
+     */
+    // void FillPortDesc(ofi::Port p, ofp_phy_port* desc);
+
+    /**
+     * Generates an OpenFlow reply message based on the type.
+     *
+     * \param openflow_len Length of the reply to make.
+     * \param type Type of reply message to make.
+     * \param bufferp Message buffer; used to make the reply.
+     * \return The OpenFlow reply message.
+     */
+    // void* MakeOpenflowReply(size_t openflow_len, uint8_t type, ofpbuf** bufferp);
+
+    /**
+     * \name Receive Methods
+     *
+     * Actions to do when a specific OpenFlow message/packet is received
+     *
+     * @{
+     */
+    /**
+     * \param msg The OpenFlow message received.
+     * \return 0 if everything's ok, otherwise an error number.
+     */
+    int ReceiveFeaturesRequest(const void* msg);
+    int ReceiveGetConfigRequest(const void* msg);
+    int ReceiveSetConfig(const void* msg);
+    int ReceivePacketOut(const void* msg);
+    int ReceiveFlow(const void* msg);
+    int ReceivePortMod(const void* msg);
+    int ReceiveStatsRequest(const void* msg);
+    int ReceiveEchoRequest(const void* msg);
+    int ReceiveEchoReply(const void* msg);
+    int ReceiveVPortMod(const void* msg);
+    int ReceiveVPortTableFeaturesRequest(const void* msg);
+    /**@}*/
+
+    /**
+     * \ingroup bridge
+     * Structure holding the status of an address
+     */
+    struct LearnedState
     {
-        READY, /**< The transmitter is ready to begin transmission of a packet */
-        BUSY   /**< The transmitter is busy transmitting a packet */
+        Ptr<NetDevice> associatedPort; //!< port associated with the address
+        Time expirationTime;           //!< time it takes for learned MAC state to expire
     };
 
-    /**
-     * The state of the Net Device transmit state machine.
-     */
-    TxMachineState m_txMachineState;
-
-    /**
-     * The data rate that the Net Device uses to simulate packet transmission
-     * timing.
-     */
-    DataRate m_bps;
-
-    /**
-     * The interframe gap that the Net Device uses to throttle packet
-     * transmission
-     */
-    Time m_tInterframeGap;
-
-    /**
-     * The PointToPointChannel to which this PointToPointNetDevice has been
-     * attached.
-     */
-    Ptr<PointToPointChannel> m_channel;
-
-    /**
-     * Error model for receive packet events
-     */
-    Ptr<ErrorModel> m_receiveErrorModel;
-
-    /**
-     * The trace source fired when packets come into the "top" of the device
-     * at the L3/L2 transition, before being queued for transmission.
-     */
-    TracedCallback<Ptr<const Packet>> m_macTxTrace;
-
-    /**
-     * The trace source fired when packets coming into the "top" of the device
-     * at the L3/L2 transition are dropped before being queued for transmission.
-     */
-    TracedCallback<Ptr<const Packet>> m_macTxDropTrace;
-
-    /**
-     * The trace source fired for packets successfully received by the device
-     * immediately before being forwarded up to higher layers (at the L2/L3
-     * transition).  This is a promiscuous trace (which doesn't mean a lot here
-     * in the point-to-point device).
-     */
-    TracedCallback<Ptr<const Packet>> m_macPromiscRxTrace;
-
-    /**
-     * The trace source fired for packets successfully received by the device
-     * immediately before being forwarded up to higher layers (at the L2/L3
-     * transition).  This is a non-promiscuous trace (which doesn't mean a lot
-     * here in the point-to-point device).
-     */
-    TracedCallback<Ptr<const Packet>> m_macRxTrace;
-
-    /**
-     * The trace source fired for packets successfully received by the device
-     * but are dropped before being forwarded up to higher layers (at the L2/L3
-     * transition).
-     */
-    TracedCallback<Ptr<const Packet>> m_macRxDropTrace;
-
-    /**
-     * The trace source fired when a packet begins the transmission process on
-     * the medium.
-     */
-    TracedCallback<Ptr<const Packet>> m_phyTxBeginTrace;
-
-    /**
-     * The trace source fired when a packet ends the transmission process on
-     * the medium.
-     */
-    TracedCallback<Ptr<const Packet>> m_phyTxEndTrace;
-
-    /**
-     * The trace source fired when the phy layer drops a packet before it tries
-     * to transmit it.
-     */
-    TracedCallback<Ptr<const Packet>> m_phyTxDropTrace;
-
-    /**
-     * The trace source fired when a packet begins the reception process from
-     * the medium -- when the simulated first bit(s) arrive.
-     */
-    TracedCallback<Ptr<const Packet>> m_phyRxBeginTrace;
-
-    /**
-     * The trace source fired when a packet ends the reception process from
-     * the medium.
-     */
-    TracedCallback<Ptr<const Packet>> m_phyRxEndTrace;
-
-    /**
-     * The trace source fired when the phy layer drops a packet it has received.
-     * This happens if the receiver is not enabled or the error model is active
-     * and indicates that the packet is corrupt.
-     */
-    TracedCallback<Ptr<const Packet>> m_phyRxDropTrace;
-
-    /**
-     * A trace source that emulates a non-promiscuous protocol sniffer connected
-     * to the device.  Unlike your average everyday sniffer, this trace source
-     * will not fire on PACKET_OTHERHOST events.
-     *
-     * On the transmit size, this trace hook will fire after a packet is dequeued
-     * from the device queue for transmission.  In Linux, for example, this would
-     * correspond to the point just before a device \c hard_start_xmit where
-     * \c dev_queue_xmit_nit is called to dispatch the packet to the PF_PACKET
-     * ETH_P_ALL handlers.
-     *
-     * On the receive side, this trace hook will fire when a packet is received,
-     * just before the receive callback is executed.  In Linux, for example,
-     * this would correspond to the point at which the packet is dispatched to
-     * packet sniffers in \c netif_receive_skb.
-     */
-    TracedCallback<Ptr<const Packet>> m_snifferTrace;
-
-    /**
-     * A trace source that emulates a promiscuous mode protocol sniffer connected
-     * to the device.  This trace source fire on packets destined for any host
-     * just like your average everyday packet sniffer.
-     *
-     * On the transmit size, this trace hook will fire after a packet is dequeued
-     * from the device queue for transmission.  In Linux, for example, this would
-     * correspond to the point just before a device \c hard_start_xmit where
-     * \c dev_queue_xmit_nit is called to dispatch the packet to the PF_PACKET
-     * ETH_P_ALL handlers.
-     *
-     * On the receive side, this trace hook will fire when a packet is received,
-     * just before the receive callback is executed.  In Linux, for example,
-     * this would correspond to the point at which the packet is dispatched to
-     * packet sniffers in \c netif_receive_skb.
-     */
-    TracedCallback<Ptr<const Packet>> m_promiscSnifferTrace;
-
+    std::map<Mac48Address, LearnedState> m_learnState;   //!< Container for known address statuses
     Ptr<Node> m_node;                                    //!< Node owning this NetDevice
     Mac48Address m_address;                              //!< Mac48Address of this NetDevice
+    Time m_expirationTime; //!< time it takes for learned MAC state to expire
+                           //
+    Ptr<BridgeChannel> m_channel;                        //!< virtual bridged channel
+    std::vector<Ptr<NetDevice>> m_ports;                 //!< bridged ports
     NetDevice::ReceiveCallback m_rxCallback;             //!< Receive callback
-    NetDevice::PromiscReceiveCallback m_promiscCallback; //!< Receive callback
-                                                         //   (promisc data)
-    uint32_t m_ifIndex;                                  //!< Index of the interface
-    bool m_linkUp;                                       //!< Identify if the link is up or not
-    TracedCallback<> m_linkChangeCallbacks;              //!< Callback for the link change event
+    NetDevice::PromiscReceiveCallback m_promiscRxCallback; //!< Receive callback
+                           //   (promisc data)
+    uint32_t m_ifIndex;    //!< Index of the interface
+                           //
 
     static const uint16_t DEFAULT_MTU = 1500; //!< Default MTU
 
@@ -358,22 +399,13 @@ class SnicNetDevice : public NetDevice
      * Ethernet.
      */
     uint32_t m_mtu;
+    bool m_enableLearning; //!< true if the bridge will learn the node status
+
+    /// PacketData type
+    // typedef std::map<uint32_t, ofi::SwitchPacketMetadata> PacketData_t;
+    // PacketData_t m_packetData; ///< Packet data
 
     Ptr<Packet> m_currentPkt; //!< Current packet processed
-
-    /**
-     * \brief PPP to Ethernet protocol number mapping
-     * \param protocol A PPP protocol number
-     * \return The corresponding Ethernet protocol number
-     */
-    static uint16_t PppToEther(uint16_t protocol);
-
-    /**
-     * \brief Ethernet to PPP protocol number mapping
-     * \param protocol An Ethernet protocol number
-     * \return The corresponding PPP protocol number
-     */
-    static uint16_t EtherToPpp(uint16_t protocol);
   };
 }
 #endif // SNIC_NET_DEVICE_H
