@@ -64,6 +64,48 @@ SnicNetDevice::~SnicNetDevice()
 }
 
 void
+SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_ASSERT(snicPort != this);
+
+    if (!Mac48Address::IsMatchingType(snicPort->GetAddress()))
+    {
+        NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
+    }
+    if (!snicPort->SupportsSendFrom())
+    {
+        NS_FATAL_ERROR("Device does not support SendFrom: cannot be added to bridge.");
+    }
+    if (m_address == Mac48Address())
+    {
+        m_address = Mac48Address::ConvertFrom(snicPort->GetAddress());
+    }
+
+    NS_LOG_DEBUG("RegisterProtocolHandler for " << snicPort->GetInstanceTypeId().GetName());
+    m_node->RegisterProtocolHandler(MakeCallback(&SnicNetDevice::ReceiveFromDevice, this),
+                                    0,
+                                    snicPort,
+                                    true);
+    m_ports.push_back(snicPort);
+    m_channel->AddChannel(snicPort->GetChannel());
+}
+
+uint32_t
+SnicNetDevice::GetNSnicPorts() const
+{
+    NS_LOG_FUNCTION_NOARGS();
+    return m_ports.size();
+}
+
+Ptr<NetDevice>
+SnicNetDevice::GetSnicPort(uint32_t n) const
+{
+    NS_LOG_FUNCTION_NOARGS();
+    return m_ports[n];
+}
+
+void
 SnicNetDevice::DoDispose()
 {
     NS_LOG_FUNCTION(this);

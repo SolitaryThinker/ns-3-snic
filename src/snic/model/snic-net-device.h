@@ -79,6 +79,7 @@ class SnicNetDevice : public NetDevice
      * \return the n-th snic conected NetDevice
      */
     Ptr<NetDevice> GetSnicPort(uint32_t n) const;
+    // int GetSnicPortIndex(Ptr<SnicPort>
 
     // inherited from NetDevice base class
     void SetIfIndex(const uint32_t index) override;
