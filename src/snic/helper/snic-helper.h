@@ -49,7 +49,7 @@ class SnicHelper
      * Set these attribute on each ns3::PointToPointChannel created
      * by PointToPointHelper::Install
      */
-    void SetChannelAttribute(std::string name, const AttributeValue& value);
+    // void SetChannelAttribute(std::string name, const AttributeValue& value);
 
     /**
      * Disable flow control only if you know what you are doing. By disabling
@@ -115,7 +115,7 @@ class SnicHelper
     // Ptr<NetDevice> nd,
     // bool explicitFilename) override;
 
-    ObjectFactory m_channelFactory; //!< Channel Factory
+    // ObjectFactory m_channelFactory; //!< Channel Factory
     ObjectFactory m_deviceFactory;  //!< Device Factory
     bool m_enableFlowControl;       //!< whether to enable flow control
 };

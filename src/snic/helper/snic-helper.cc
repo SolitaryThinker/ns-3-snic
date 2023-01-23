@@ -24,7 +24,7 @@ NS_LOG_COMPONENT_DEFINE("SnicHelper");
 SnicHelper::SnicHelper()
 {
   m_deviceFactory.SetTypeId("ns3::SnicNetDevice");
-  m_channelFactory.SetTypeId("ns3::SnicChannel");
+  // m_channelFactory.SetTypeId("ns3::SnicChannel");
   m_enableFlowControl = true;
 }
 
@@ -34,11 +34,11 @@ SnicHelper::SetDeviceAttribute(std::string n1, const AttributeValue& v1)
     m_deviceFactory.Set(n1, v1);
 }
 
-void
-SnicHelper::SetChannelAttribute(std::string n1, const AttributeValue& v1)
-{
-    m_channelFactory.Set(n1, v1);
-}
+// void
+// SnicHelper::SetChannelAttribute(std::string n1, const AttributeValue& v1)
+//{
+//  m_channelFactory.Set(n1, v1);
+//}
 
 void
 SnicHelper::DisableFlowControl()
@@ -223,8 +223,10 @@ SnicHelper::Install(Ptr<Node> node, NetDeviceContainer c)
 
   for (NetDeviceContainer::Iterator i = c.Begin(); i != c.End(); ++i)
   {
+      NS_LOG_UNCOND("hihi test");
       NS_LOG_LOGIC("**** Add SnicPort " << *i);
       dev->AddSnicPort(*i);
+      NS_LOG_LOGIC("**** after Add SnicPort " << *i);
   }
   return devs;
 }

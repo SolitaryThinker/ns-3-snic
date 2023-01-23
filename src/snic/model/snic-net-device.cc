@@ -49,13 +49,14 @@ SnicNetDevice::GetTypeId()
 }
 
 SnicNetDevice::SnicNetDevice()
-    : m_node(nullptr)
-// m_txMachineState(READY),
-// m_channel(nullptr),
-// m_linkUp(false),
-// m_currentPkt(nullptr)
+    : m_node(nullptr),
+      m_ifIndex(0),
+      m_mtu(0xffff)
 {
-    NS_LOG_FUNCTION(this);
+    NS_LOG_FUNCTION_NOARGS();
+    m_channel = CreateObject<BridgeChannel>();
+
+    // time_init(); // OFSI's clock; needed to use the buffer storage system.
 }
 
 SnicNetDevice::~SnicNetDevice()
@@ -68,6 +69,7 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
 {
     NS_LOG_FUNCTION_NOARGS();
     NS_ASSERT(snicPort != this);
+    NS_LOG_UNCOND("adding snic port");
 
     if (!Mac48Address::IsMatchingType(snicPort->GetAddress()))
     {
@@ -88,7 +90,9 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
                                     snicPort,
                                     true);
     m_ports.push_back(snicPort);
+    NS_LOG_UNCOND("adding channel");
     m_channel->AddChannel(snicPort->GetChannel());
+    NS_LOG_UNCOND("after adding channel");
 }
 
 uint32_t

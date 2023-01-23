@@ -5,5 +5,6 @@ build_lib_example(
         ${libsnic}
         ${libapplications}
         ${libcsma}
+        ${libinternet}
 )
 
