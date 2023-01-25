@@ -127,11 +127,28 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
                                  const Address& dst,
                                  PacketType packetType)
 {
+    Packet::EnablePrinting();
     NS_LOG_FUNCTION_NOARGS();
     NS_LOG_DEBUG("UID is " << packet->GetUid());
 
     Mac48Address src48 = Mac48Address::ConvertFrom(src);
     Mac48Address dst48 = Mac48Address::ConvertFrom(dst);
+    NS_LOG_DEBUG("mac src is " << src48);
+    NS_LOG_DEBUG("mac dest is " << dst48);
+    // NS_LOG_DEBUG("src is " << InetSocketAddress::ConvertFrom(src));
+    // NS_LOG_DEBUG("dest is " << InetSocketAddress::ConvertFrom(dst));
+    NS_LOG_DEBUG("m_address is " << m_address);
+    NS_LOG_DEBUG("packetType is " << packetType);
+    Ipv4Header udpHeader;
+    Ptr<Packet> copypkt = packet->Copy();
+    copypkt->RemoveHeader(udpHeader);
+    std::ostringstream coll;
+
+    // packet->Print(coll);
+    udpHeader.Print(coll);
+
+    NS_LOG_DEBUG("header is " << coll.str());
+
 
     if (!m_promiscRxCallback.IsNull())
     {
@@ -143,6 +160,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     case PACKET_HOST:
         if (dst48 == m_address)
         {
+            NS_LOG_DEBUG("learning ");
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
@@ -150,8 +168,9 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
 
     case PACKET_BROADCAST:
     case PACKET_MULTICAST:
-        // m_rxCallback(this, packet, protocol, src);
-        // ForwardBroadcast(incomingPort, packet, protocol, src48, dst48);
+        NS_LOG_DEBUG("broadcast ");
+        m_rxCallback(this, packet, protocol, src);
+        ForwardBroadcast(incomingPort, packet, protocol, src48, dst48);
         break;
 
     case PACKET_OTHERHOST:
@@ -162,9 +181,94 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         }
         else
         {
-            // ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+            NS_LOG_DEBUG("unicast ");
+            ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
         }
         break;
+    }
+}
+
+void
+SnicNetDevice::ProcessPacket(Ptr<NetDevice> incomingPort,
+                             Ptr<const Packet> packet,
+                             uint16_t protocol,
+                             Mac48Address src,
+                             Mac48Address dst)
+{
+    // parse
+    // match
+    // action
+    // extract header,
+    // figure out what NT/ protocols are needed
+    // if we need to offload
+    // how to route
+}
+
+void
+SnicNetDevice::ForwardUnicast(Ptr<NetDevice> incomingPort,
+                              Ptr<const Packet> packet,
+                              uint16_t protocol,
+                              Mac48Address src,
+                              Mac48Address dst)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_DEBUG("LearningBridgeForward (incomingPort="
+                 << incomingPort->GetInstanceTypeId().GetName() << ", packet=" << packet
+                 << ", protocol=" << protocol << ", src=" << src << ", dst=" << dst << ")");
+
+    Learn(src, incomingPort);
+    Ptr<NetDevice> outPort = GetLearnedState(dst);
+    if (outPort && outPort != incomingPort)
+    {
+        NS_LOG_LOGIC("Learning bridge state says to use port `"
+                     << outPort->GetInstanceTypeId().GetName() << "'");
+        outPort->SendFrom(packet->Copy(), src, dst, protocol);
+    }
+    else
+    {
+        NS_LOG_LOGIC("No learned state: send through all ports");
+        for (std::vector<Ptr<NetDevice>>::iterator iter = m_ports.begin(); iter != m_ports.end();
+             iter++)
+        {
+            Ptr<NetDevice> port = *iter;
+            if (port != incomingPort)
+            {
+                NS_LOG_LOGIC("LearningBridgeForward ("
+                             << src << " => " << dst
+                             << "): " << incomingPort->GetInstanceTypeId().GetName() << " --> "
+                             << port->GetInstanceTypeId().GetName() << " (UID " << packet->GetUid()
+                             << ").");
+                port->SendFrom(packet->Copy(), src, dst, protocol);
+            }
+        }
+    }
+}
+
+void
+SnicNetDevice::ForwardBroadcast(Ptr<NetDevice> incomingPort,
+                                Ptr<const Packet> packet,
+                                uint16_t protocol,
+                                Mac48Address src,
+                                Mac48Address dst)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_DEBUG("LearningSnicForward (incomingPort="
+                 << incomingPort->GetInstanceTypeId().GetName() << ", packet=" << packet
+                 << ", protocol=" << protocol << ", src=" << src << ", dst=" << dst << ")");
+    Learn(src, incomingPort);
+
+    for (std::vector<Ptr<NetDevice>>::iterator iter = m_ports.begin(); iter != m_ports.end();
+         iter++)
+    {
+        Ptr<NetDevice> port = *iter;
+        if (port != incomingPort)
+        {
+            NS_LOG_LOGIC("LearningSnicForward (" << src << " => " << dst << "): "
+                                                 << incomingPort->GetInstanceTypeId().GetName()
+                                                 << " --> " << port->GetInstanceTypeId().GetName()
+                                                 << " (UID " << packet->GetUid() << ").");
+            port->SendFrom(packet->Copy(), src, dst, protocol);
+        }
     }
 }
 

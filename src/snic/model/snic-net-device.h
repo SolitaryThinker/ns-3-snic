@@ -131,6 +131,48 @@ class SnicNetDevice : public NetDevice
                            PacketType packetType);
 
     /**
+     * \brief Process a packet
+     * \param incomingPort the packet incoming port
+     * \param packet the packet
+     * \param protocol the packet protocol (e.g., Ethertype)
+     * \param src the packet source
+     * \param dst the packet destination
+     */
+    void ProcessPacket(Ptr<NetDevice> incomingPort,
+                       Ptr<const Packet> packet,
+                       uint16_t protocol,
+                       Mac48Address src,
+                       Mac48Address dst);
+
+    /**
+     * \brief Forwards a unicast packet
+     * \param incomingPort the packet incoming port
+     * \param packet the packet
+     * \param protocol the packet protocol (e.g., Ethertype)
+     * \param src the packet source
+     * \param dst the packet destination
+     */
+    void ForwardUnicast(Ptr<NetDevice> incomingPort,
+                        Ptr<const Packet> packet,
+                        uint16_t protocol,
+                        Mac48Address src,
+                        Mac48Address dst);
+
+    /**
+     * \brief Forwards a broadcast or a multicast packet
+     * \param incomingPort the packet incoming port
+     * \param packet the packet
+     * \param protocol the packet protocol (e.g., Ethertype)
+     * \param src the packet source
+     * \param dst the packet destination
+     */
+    void ForwardBroadcast(Ptr<NetDevice> incomingPort,
+                          Ptr<const Packet> packet,
+                          uint16_t protocol,
+                          Mac48Address src,
+                          Mac48Address dst);
+
+    /**
      * \brief Learns the port a MAC address is sending from
      * \param source source address
      * \param port the port the source is sending from

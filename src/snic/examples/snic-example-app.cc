@@ -14,11 +14,11 @@ main(int argc, char* argv[])
 {
     bool verbose = true;
 
-    LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO);
-    LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
+    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
+    LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("verbose", "Tell application to log if true", verbose);
@@ -68,36 +68,25 @@ main(int argc, char* argv[])
     NS_LOG_INFO("Assign IP Addresses.");
     Ipv4AddressHelper ipv4;
     ipv4.SetBase("10.1.1.0", "255.255.255.0");
-    ipv4.Assign(terminalDevices);
+    Ipv4InterfaceContainer interfaces = ipv4.Assign(terminalDevices);
 
     NS_LOG_INFO("Create Applications.");
-    uint16_t port = 9; // Discard port (RFC 863)
+    // uint16_t port = 9; // Discard port (RFC 863)
 
-    OnOffHelper onoff("ns3::UdpSocketFactory",
-                      Address(InetSocketAddress(Ipv4Address("10.1.1.2"), port)));
-    onoff.SetConstantRate(DataRate("500kb/s"));
+    UdpEchoServerHelper echoServer(9);
 
-    ApplicationContainer app = onoff.Install(terminals.Get(0));
-    // Start the application
-    app.Start(Seconds(1.0));
-    app.Stop(Seconds(1.5));
+    ApplicationContainer serverApps = echoServer.Install(terminals.Get(1));
+    serverApps.Start(Seconds(1.0));
+    serverApps.Stop(Seconds(10.0));
 
-    // Create an optional packet sink to receive these packets
-    PacketSinkHelper sink("ns3::UdpSocketFactory",
-                          Address(InetSocketAddress(Ipv4Address::GetAny(), port)));
-    app = sink.Install(terminals.Get(1));
-    app.Start(Seconds(0.0));
+    UdpEchoClientHelper echoClient(interfaces.GetAddress(1), 9);
+    echoClient.SetAttribute("MaxPackets", UintegerValue(1));
+    echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
+    echoClient.SetAttribute("PacketSize", UintegerValue(1024));
 
-    //
-    // Create a similar flow from n3 to n0, starting at time 1.1 seconds
-    //
-    // onoff.SetAttribute("Remote", AddressValue(InetSocketAddress(Ipv4Address("10.1.1.1"), port)));
-    // app = onoff.Install(terminals.Get(3));
-    // app.Start(Seconds(1.1));
-    // app.Stop(Seconds(10.0));
-
-    // app = sink.Install(terminals.Get(0));
-    // app.Start(Seconds(0.0));
+    ApplicationContainer clientApps = echoClient.Install(terminals.Get(0));
+    clientApps.Start(Seconds(2.0));
+    clientApps.Stop(Seconds(10.0));
 
     NS_LOG_INFO("Configure Tracing.");
 
