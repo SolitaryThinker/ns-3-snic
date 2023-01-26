@@ -14,9 +14,9 @@ main(int argc, char* argv[])
 {
     bool verbose = true;
 
-    // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
-     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
@@ -28,6 +28,8 @@ main(int argc, char* argv[])
     Time::SetResolution(Time::NS);
     NS_LOG_UNCOND("Hello Simulator");
 
+    // first sNIC cluster
+    NS_LOG_INFO("Creating first sNIC cluster.");
     NS_LOG_INFO("Create nodes.");
     NodeContainer terminals;
     terminals.Create(4);
@@ -51,42 +53,64 @@ main(int argc, char* argv[])
         terminalDevices.Add(link.Get(0));
         switchDevices.Add(link.Get(1));
     }
-    NS_LOG_UNCOND("2  222 csma Simulator");
+
+    // second sNIC cluster
+    NS_LOG_INFO("Creating second sNIC cluster.");
+    NS_LOG_INFO("Create nodes.");
+    NodeContainer terminals2;
+    terminals2.Create(4);
+
+    NodeContainer csmaSwitch2;
+    csmaSwitch2.Create(1);
+
+    NS_LOG_INFO("Build Topology");
+    CsmaHelper csma2;
+    csma2.SetChannelAttribute("DataRate", DataRateValue(5000000));
+    csma2.SetChannelAttribute("Delay", TimeValue(MilliSeconds(2)));
+
+    // Create the csma links, from each terminal to the switch
+
+    NetDeviceContainer terminalDevices2;
+    NetDeviceContainer switchDevices2;
+
+    for (int i = 0; i < 4; i++)
+    {
+        NetDeviceContainer link = csma2.Install(NodeContainer(terminals2.Get(i), csmaSwitch2));
+        terminalDevices2.Add(link.Get(0));
+        switchDevices2.Add(link.Get(1));
+    }
 
     // Create the switch netdevice, which will do the packet switching
-    Ptr<Node> switchNode = csmaSwitch.Get(0);
-    SnicHelper swtch;
+    Ptr<Node> switchNode2 = csmaSwitch2.Get(0);
+    SnicHelper swtch2;
     NS_LOG_UNCOND("csma Simulator");
-    swtch.Install(switchNode, switchDevices);
+    swtch.Install(switchNode2, switchDevices2);
 
     // Add internet stack to the terminals
-    InternetStackHelper internet;
-    internet.Install(terminals);
+    internet.Install(terminals2);
 
     // We've got the "hardware" in place.  Now we need to add IP addresses.
     //
     NS_LOG_INFO("Assign IP Addresses.");
-    Ipv4AddressHelper ipv4;
-    ipv4.SetBase("10.1.1.0", "255.255.255.0");
-    Ipv4InterfaceContainer interfaces = ipv4.Assign(terminalDevices);
+    Ipv4InterfaceContainer interfaces2 = ipv4.Assign(terminalDevices2);
 
     NS_LOG_INFO("Create Applications.");
     // uint16_t port = 9; // Discard port (RFC 863)
 
-    UdpEchoServerHelper echoServer(9);
+    //UdpEchoServerHelper echoServer(9);
 
-    ApplicationContainer serverApps = echoServer.Install(terminals.Get(1));
-    serverApps.Start(Seconds(1.0));
-    serverApps.Stop(Seconds(10.0));
+    ApplicationContainer serverApps2 = echoServer.Install(terminals2.Get(1));
+    serverApps2.Start(Seconds(1.0));
+    serverApps2.Stop(Seconds(10.0));
 
-    UdpEchoClientHelper echoClient(interfaces.GetAddress(1), 9);
-    echoClient.SetAttribute("MaxPackets", UintegerValue(1));
-    echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
-    echoClient.SetAttribute("PacketSize", UintegerValue(1024));
+    UdpEchoClientHelper echoClient2(interfaces2.GetAddress(1), 9);
+    echoClient2.SetAttribute("MaxPackets", UintegerValue(1));
+    echoClient2.SetAttribute("Interval", TimeValue(Seconds(1.0)));
+    echoClient2.SetAttribute("PacketSize", UintegerValue(1024));
 
-    ApplicationContainer clientApps = echoClient.Install(terminals.Get(0));
-    clientApps.Start(Seconds(2.0));
-    clientApps.Stop(Seconds(10.0));
+    ApplicationContainer clientApps2 = echoClient2.Install(terminals2.Get(0));
+    clientApps2.Start(Seconds(2.0));
+    clientApps2.Stop(Seconds(10.0));
 
     NS_LOG_INFO("Configure Tracing.");
 

@@ -13,8 +13,12 @@ endif()
 build_lib(
     LIBNAME snic
     SOURCE_FILES model/snic-net-device.cc
+                 model/snic-header.cc
+                 model/snic-channel.cc
                  helper/snic-helper.cc
     HEADER_FILES model/snic-net-device.h
+                 model/snic-header.h
+                 model/snic-channel.h
                  helper/snic-helper.h
     LIBRARIES_TO_LINK ${libcore}
                       ${libinternet}

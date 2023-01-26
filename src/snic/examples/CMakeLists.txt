@@ -17,3 +17,13 @@ build_lib_example(
         ${libcsma}
         ${libinternet}
 )
+
+build_lib_example(
+    NAME snic-example-top
+    SOURCE_FILES snic-example-top.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)
