@@ -65,6 +65,15 @@ SnicNetDevice::~SnicNetDevice()
 }
 
 void
+SnicNetDevice::AddPeerSnic(Ptr<SnicNetDevice> peerSnic)
+{
+  NS_LOG_FUNCTION_NOARGS();
+  NS_ASSERT(peerSnic != this);
+  NS_LOG_UNCOND("adding peer sNic");
+
+}
+
+void
 SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
 {
     NS_LOG_FUNCTION_NOARGS();
