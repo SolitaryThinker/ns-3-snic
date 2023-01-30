@@ -7,6 +7,8 @@
 #ifndef SNIC_CHANNEL_H
 #define SNIC_CHANNEL_H
 
+#include "snic-channel.h"
+
 #include "ns3/channel.h"
 #include "ns3/data-rate.h"
 #include "ns3/nstime.h"
@@ -18,168 +20,314 @@ namespace ns3
 
 class Packet;
 
+class SnicNetDevice;
+
+/**
+ * \ingroup snic
+ * \brief SnicNetDevice Record
+ *
+ * Stores the information related to each net device that is
+ * connected to the channel.
+ */
+class SnicDeviceRec
+{
+  public:
+    Ptr<SnicNetDevice> devicePtr; //!< Pointer to the net device
+    bool active;                  //!< Is net device enabled to TX/RX
+
+    SnicDeviceRec();
+
+    /**
+     * \brief Constructor
+     * Builds a record of the given NetDevice, its status is initialized to enabled.
+     *
+     * \param device the device to record
+     */
+    SnicDeviceRec(Ptr<SnicNetDevice> device);
+
+    /**
+     * Copy constructor
+     * \param o the object to copy
+     */
+    SnicDeviceRec(const SnicDeviceRec& o);
+
+    /**
+     * \return If the net device pointed to by the devicePtr is active
+     * and ready to RX/TX.
+     */
+    bool IsActive();
+};
+
+/**
+ * \ingroup snic
+ * \brief Snic Channel.
+ *
+ * This class represents a simple Snic channel that can be used
+ * when many nodes are connected to one wire. It uses a single busy
+ * flag to indicate if the channel is currently in use. It does not
+ * take into account the distances between stations or the speed of
+ * light to determine collisions.
+ */
 class SnicChannel : public Channel
 {
   public:
     /**
-     * \brief Get the TypeId
-     *
-     * \return The TypeId for this class
+     * \brief Get the type ID.
+     * \return the object TypeId
      */
     static TypeId GetTypeId();
 
     /**
      * \brief Create a SnicChannel
-     *
-     * By default, you get a channel that has an "infinitely" fast
-     * transmission speed and zero delay.
      */
     SnicChannel();
+    /**
+     * \brief Destroy a SnicChannel
+     */
+    ~SnicChannel() override;
+
+    // Delete copy constructor and assignment operator to avoid misuse
+    SnicChannel(const SnicChannel&) = delete;
+    SnicChannel& operator=(const SnicChannel&) = delete;
 
     /**
      * \brief Attach a given netdevice to this channel
-     * \param device pointer to the netdevice to attach to the channel
+     *
+     * \param device Device pointer to the netdevice to attach to the channel
+     * \return The assigned device number
      */
-    void Attach(Ptr<SnicNetDevice> device);
+    int32_t Attach(Ptr<SnicNetDevice> device);
 
     /**
-     * \brief Transmit a packet over this channel
-     * \param p Packet to transmit
-     * \param src Source SnicNetDevice
-     * \param txTime Transmit time to apply
-     * \returns true if successful (currently always true)
+     * \brief Detach a given netdevice from this channel
+     *
+     * The net device is marked as inactive and it is not allowed to
+     * receive or transmit packets
+     *
+     * \param device Device pointer to the netdevice to detach from the channel
+     * \return True if the device is found and attached to the channel,
+     * false if the device is not currently connected to the channel or
+     * can't be found.
      */
-    virtual bool TransmitStart(Ptr<const Packet> p, Ptr<SnicNetDevice> src, Time txTime);
+    bool Detach(Ptr<SnicNetDevice> device);
 
     /**
-     * \brief Get number of devices on this channel
-     * \returns number of devices on this channel
+     * \brief Detach a given netdevice from this channel
+     *
+     * The net device is marked as inactive and it is not allowed to
+     * receive or transmit packets
+     *
+     * \param deviceId The deviceID assigned to the net device when it
+     * was connected to the channel
+     * \return True if the device is found and attached to the channel,
+     * false if the device is not currently connected to the channel or
+     * can't be found.
+     */
+    bool Detach(uint32_t deviceId);
+
+    /**
+     * \brief Reattach a previously detached net device to the channel
+     *
+     * The net device is marked as active. It is now allowed to receive
+     * or transmit packets. The net device must have been previously
+     * attached to the channel using the attach function.
+     *
+     * \param deviceId The device ID assigned to the net device when it
+     * was connected to the channel
+     * \return True if the device is found and is not attached to the
+     * channel, false if the device is currently connected to the
+     * channel or can't be found.
+     */
+    bool Reattach(uint32_t deviceId);
+
+    /**
+     * \brief Reattach a previously detached net device to the channel
+     *
+     * The net device is marked as active. It is now allowed to receive
+     * or transmit packets. The net device must have been previously
+     * attached to the channel using the attach function.
+     *
+     * \param device Device pointer to the netdevice to detach from the channel
+     * \return True if the device is found and is not attached to the
+     * channel, false if the device is currently connected to the
+     * channel or can't be found.
+     */
+    bool Reattach(Ptr<SnicNetDevice> device);
+
+    /**
+     * \brief Start transmitting a packet over the channel
+     *
+     * If the srcId belongs to a net device that is connected to the
+     * channel, packet transmission begins, and the channel becomes busy
+     * until the packet has completely reached all destinations.
+     *
+     * \param p A reference to the packet that will be transmitted over
+     * the channel
+     * \param srcId The device Id of the net device that wants to
+     * transmit on the channel.
+     * \return True if the channel is not busy and the transmitting net
+     * device is currently active.
+     */
+    bool TransmitStart(Ptr<const Packet> p, uint32_t srcId);
+
+    /**
+     * \brief Indicates that the net device has finished transmitting
+     * the packet over the channel
+     *
+     * The channel will stay busy until the packet has completely
+     * propagated to all net devices attached to the channel. The
+     * TransmitEnd function schedules the PropagationCompleteEvent which
+     * will free the channel for further transmissions. Stores the
+     * packet p as the m_currentPkt, the packet being currently
+     * transmitting.
+     *
+     * \return Returns true unless the source was detached before it
+     * completed its transmission.
+     */
+    bool TransmitEnd();
+
+    /**
+     * \brief Indicates that the channel has finished propagating the
+     * current packet. The channel is released and becomes free.
+     *
+     * Calls the receive function of every active net device that is
+     * attached to the channel.
+     */
+    void PropagationCompleteEvent();
+
+    /**
+     * \return Returns the device number assigned to a net device by the
+     * channel
+     *
+     * \param device Device pointer to the netdevice for which the device
+     * number is needed
+     */
+    int32_t GetDeviceNum(Ptr<SnicNetDevice> device);
+
+    /**
+     * Current state of the channel
+     */
+    enum WireState
+    {
+        IDLE,         /**< Channel is IDLE, no packet is being transmitted */
+        TRANSMITTING, /**< Channel is BUSY, a packet is being written by a net device */
+        PROPAGATING   /**< Channel is BUSY, packet is propagating to all attached net devices */
+    };
+
+    /**
+     * \return Returns the state of the channel (IDLE -- free,
+     * TRANSMITTING -- busy, PROPAGATING - busy )
+     */
+    // WireState GetState();
+
+    /**
+     * \brief Indicates if the channel is busy. The channel will only
+     * accept new packets for transmission if it is not busy.
+     *
+     * \return Returns true if the channel is busy and false if it is
+     * free.
+     */
+    bool IsBusy();
+
+    /**
+     * \brief Indicates if a net device is currently attached or
+     * detached from the channel.
+     *
+     * \param deviceId The ID that was assigned to the net device when
+     * it was attached to the channel.
+     * \return Returns true if the net device is attached to the
+     * channel, false otherwise.
+     */
+    bool IsActive(uint32_t deviceId);
+
+    /**
+     * \return Returns the number of net devices that are currently
+     * attached to the channel.
+     */
+    uint32_t GetNumActDevices();
+
+    /**
+     * \return Returns the total number of devices including devices
+     * that have been detached from the channel.
      */
     std::size_t GetNDevices() const override;
 
     /**
-     * \brief Get SnicNetDevice corresponding to index i on this channel
-     * \param i Index number of the device requested
-     * \returns Ptr to SnicNetDevice requested
+     * \return Get a NetDevice pointer to a connected network device.
+     *
+     * \param i The index of the net device.
+     * \return Returns the pointer to the net device that is associated
+     * with deviceId i.
+     */
+    Ptr<NetDevice> GetDevice(std::size_t i) const override;
+
+    /**
+     * \return Get a SnicNetDevice pointer to a connected network device.
+     *
+     * \param i The deviceId of the net device for which we want the
+     * pointer.
+     * \return Returns the pointer to the net device that is associated
+     * with deviceId i.
      */
     Ptr<SnicNetDevice> GetSnicDevice(std::size_t i) const;
 
     /**
-     * \brief Get NetDevice corresponding to index i on this channel
-     * \param i Index number of the device requested
-     * \returns Ptr to NetDevice requested
-     */
-    Ptr<NetDevice> GetDevice(std::size_t i) const override;
-
-  protected:
-    /**
-     * \brief Get the delay associated with this channel
-     * \returns Time delay
-     */
-    Time GetDelay() const;
-
-    /**
-     * \brief Check to make sure the link is initialized
-     * \returns true if initialized, asserts otherwise
-     */
-    bool IsInitialized() const;
-
-    /**
-     * \brief Get the net-device source
-     * \param i the link requested
-     * \returns Ptr to SnicNetDevice source for the
-     * specified link
-     */
-    Ptr<SnicNetDevice> GetSource(uint32_t i) const;
-
-    /**
-     * \brief Get the net-device destination
-     * \param i the link requested
-     * \returns Ptr to SnicNetDevice destination for
-     * the specified link
-     */
-    Ptr<SnicNetDevice> GetDestination(uint32_t i) const;
-
-    /**
-     * TracedCallback signature for packet transmission animation events.
+     * Get the assigned data rate of the channel
      *
-     * \param [in] packet The packet being transmitted.
-     * \param [in] txDevice the TransmitTing NetDevice.
-     * \param [in] rxDevice the Receiving NetDevice.
-     * \param [in] duration The amount of time to transmit the packet.
-     * \param [in] lastBitTime Last bit receive time (relative to now)
-     * \deprecated The non-const \c Ptr<NetDevice> argument is deprecated
-     * and will be changed to \c Ptr<const NetDevice> in a future release.
+     * \return Returns the DataRate to be used by device transmitters.
+     * with deviceId i.
      */
-    typedef void (*TxRxAnimationCallback)(Ptr<const Packet> packet,
-                                          Ptr<NetDevice> txDevice,
-                                          Ptr<NetDevice> rxDevice,
-                                          Time duration,
-                                          Time lastBitTime);
+    DataRate GetDataRate();
+
+    /**
+     * Get the assigned speed-of-light delay of the channel
+     *
+     * \return Returns the delay used by the channel.
+     */
+    Time GetDelay();
 
   private:
-    /** Each sNic link has exactly two net devices. */
-    static const std::size_t N_DEVICES = 2;
-
-    Time m_delay;           //!< Propagation delay
-    std::size_t m_nDevices; //!< Devices of this channel
+    /**
+     * The assigned data rate of the channel
+     */
+    DataRate m_bps;
 
     /**
-     * The trace source for the packet transmission animation events that the
-     * device can fire.
-     * Arguments to the callback are the packet, transmitting
-     * net device, receiving net device, transmission time and
-     * packet receipt time.
-     *
-     * \see class CallBackTraceSource
-     * \deprecated The non-const \c Ptr<NetDevice> argument is deprecated
-     * and will be changed to \c Ptr<const NetDevice> in a future release.
+     * The assigned speed-of-light delay of the channel
      */
-    TracedCallback<Ptr<const Packet>, // Packet being transmitted
-                   Ptr<NetDevice>,    // Transmitting NetDevice
-                   Ptr<NetDevice>,    // Receiving NetDevice
-                   Time,              // Amount of time to transmit the pkt
-                   Time               // Last bit receive time (relative to now)
-                   >
-        m_txrxSnic;
-
-    /** \brief Wire states
-     *
-     */
-    enum WireState
-    {
-        /** Initializing state */
-        INITIALIZING,
-        /** Idle state (no transmission from NetDevice) */
-        IDLE,
-        /** Transmitting state (data being transmitted from NetDevice. */
-        TRANSMITTING,
-        /** Propagating state (data is being propagated in the channel. */
-        PROPAGATING
-    };
+    Time m_delay;
 
     /**
-     * \brief Wire model for the SnicChannel
+     * List of the net devices that have been or are currently connected
+     * to the channel.
+     *
+     * Devices are nor removed from this list, they are marked as
+     * inactive. Otherwise the assigned device IDs will not refer to the
+     * correct NetDevice. The DeviceIds are used so that it is possible
+     * to have a number to refer to an entry in the list so that the
+     * whole list does not have to be searched when making sure that a
+     * source is attached to a channel when it is transmitting data.
      */
-    class Link
-    {
-      public:
-        /** \brief Create the link, it will be in INITIALIZING state
-         *
-         */
-        Link()
-            : m_state(INITIALIZING),
-              m_src(nullptr),
-              m_dst(nullptr)
-        {
-        }
+    std::vector<SnicDeviceRec> m_deviceList;
 
-        WireState m_state;                //!< State of the link
-        Ptr<SnicNetDevice> m_src; //!< First NetDevice
-        Ptr<SnicNetDevice> m_dst; //!< Second NetDevice
-    };
+    /**
+     * The Packet that is currently being transmitted on the channel (or last
+     * packet to have been transmitted on the channel if the channel is
+     * free.)
+     */
+    Ptr<Packet> m_currentPkt;
 
-    Link m_link[N_DEVICES]; //!< Link model
+    /**
+     * Device Id of the source that is currently transmitting on the
+     * channel. Or last source to have transmitted a packet on the
+     * channel, if the channel is currently not busy.
+     */
+    uint32_t m_currentSrc;
+
+    /**
+     * Current state of the channel
+     */
+    WireState m_state;
 };
 
 } // namespace ns3

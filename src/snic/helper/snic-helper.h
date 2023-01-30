@@ -49,7 +49,7 @@ class SnicHelper
      * Set these attribute on each ns3::PointToPointChannel created
      * by PointToPointHelper::Install
      */
-    // void SetChannelAttribute(std::string name, const AttributeValue& value);
+    void SetChannelAttribute(std::string name, const AttributeValue& value);
 
     /**
      * Disable flow control only if you know what you are doing. By disabling
@@ -82,6 +82,9 @@ class SnicHelper
      * Saves you from having to construct a temporary NodeContainer.
      */
     NetDeviceContainer Install(std::string nodeName, NetDeviceContainer c);
+    void AddPort(Ptr<NetDevice> snic, Ptr<NetDevice> dev);
+    void ConnectTwoSnic(NetDeviceContainer snic1, NetDeviceContainer snic2);
+
   private:
     /**
      * \brief Enable pcap output the indicated net device.

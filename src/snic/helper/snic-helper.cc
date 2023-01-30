@@ -6,8 +6,11 @@
 
 #include "snic-helper.h"
 
+//#include "snic-channel.h"
+
 #include "ns3/abort.h"
 #include "ns3/config.h"
+//#include "ns3/csma-channel.h"
 #include "ns3/log.h"
 #include "ns3/names.h"
 #include "ns3/net-device-queue-interface.h"
@@ -37,7 +40,7 @@ SnicHelper::SetDeviceAttribute(std::string n1, const AttributeValue& v1)
 // void
 // SnicHelper::SetChannelAttribute(std::string n1, const AttributeValue& v1)
 //{
-//  m_channelFactory.Set(n1, v1);
+// m_channelFactory.Set(n1, v1);
 //}
 
 void
@@ -237,5 +240,24 @@ SnicHelper::Install(std::string nodeName, NetDeviceContainer c)
     NS_LOG_FUNCTION_NOARGS();
     Ptr<Node> node = Names::Find<Node>(nodeName);
     return Install(node, c);
+}
+
+void
+SnicHelper::AddPort(Ptr<NetDevice> snic, Ptr<NetDevice> dev)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_LOGIC("**** add port on already created Snic device");
+    DynamicCast<SnicNetDevice, NetDevice>(snic)->AddSnicPort(dev);
+}
+
+void
+SnicHelper::ConnectTwoSnic(NetDeviceContainer snic1, NetDeviceContainer snic2)
+{
+    // Ptr<SnicChannel> ch = CreateObject<SnicChannel>();
+    //  NS_ASSERT(snic1.
+    Ptr<SnicNetDevice> s1 = DynamicCast<SnicNetDevice, NetDevice>(snic1.Get(0));
+    Ptr<SnicNetDevice> s2 = DynamicCast<SnicNetDevice, NetDevice>(snic2.Get(0));
+    // s1->AddPeerSnic(s2, ch);
+    // s2->AddPeerSnic(s1, ch);
 }
 } // namespace ns3

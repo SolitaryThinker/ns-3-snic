@@ -7,6 +7,8 @@
 #ifndef SNIC_NET_DEVICE_H
 #define SNIC_NET_DEVICE_H
 
+//#include "snic-channel.h"
+
 #include "ns3/arp-header.h"
 #include "ns3/arp-l3-protocol.h"
 #include "ns3/bridge-channel.h"
@@ -65,6 +67,8 @@ class SnicNetDevice : public NetDevice
      * never on its port netdevices. XXX
      */
     void AddSnicPort(Ptr<NetDevice> snicPort);
+    // void AddPeerSnic(Ptr<SnicNetDevice> peerSnic, Ptr<SnicChannel> ch);
+
     /**
      * \brief Gets the number of snic connected 'ports', i.e., the NetDevices currently connected
      * to snic.
@@ -109,6 +113,20 @@ class SnicNetDevice : public NetDevice
     void SetPromiscReceiveCallback(NetDevice::PromiscReceiveCallback cb) override;
     bool SupportsSendFrom() const override;
     Address GetMulticast(Ipv6Address addr) const override;
+
+    /**
+     * Receive a packet from a connected CsmaChannel.
+     *
+     * The CsmaNetDevice receives packets from its connected channel
+     * and forwards them up the protocol stack.  This is the public method
+     * used by the channel to indicate that the last bit of a packet has
+     * arrived at the device.
+     *
+     * \see CsmaChannel
+     * \param p a reference to the received packet
+     * \param sender the CsmaNetDevice that transmitted the packet in the first place
+     */
+    void Receive(Ptr<Packet> p, Ptr<SnicNetDevice> sender);
 
   protected:
     void DoDispose() override;

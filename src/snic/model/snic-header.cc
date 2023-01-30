@@ -4,7 +4,7 @@
  * Author: Will Lin <wlsaidhi@gmail.com>
  */
 
-#include "llc-snap-header.h"
+#include "snic-header.h"
 
 namespace ns3
 {

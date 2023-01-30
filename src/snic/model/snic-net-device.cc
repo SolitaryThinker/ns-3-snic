@@ -6,8 +6,8 @@
 
 #include "snic-net-device.h"
 
-#include "ns3/error-model.h"
-#include "ns3/llc-snap-header.h"
+
+#include "ns3/boolean.h"
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
 #include "ns3/pointer.h"
@@ -34,11 +34,16 @@ SnicNetDevice::GetTypeId()
                           UintegerValue(DEFAULT_MTU),
                           MakeUintegerAccessor(&SnicNetDevice::SetMtu, &SnicNetDevice::GetMtu),
                           MakeUintegerChecker<uint16_t>())
-            .AddAttribute("Address",
-                          "The MAC address of this device.",
-                          Mac48AddressValue(Mac48Address("ff:ff:ff:ff:ff:ff")),
-                          MakeMac48AddressAccessor(&SnicNetDevice::m_address),
-                          MakeMac48AddressChecker());
+            .AddAttribute("EnableLearning",
+                          "Enable the learning mode of the Learning Bridge",
+                          BooleanValue(true),
+                          MakeBooleanAccessor(&SnicNetDevice::m_enableLearning),
+                          MakeBooleanChecker())
+            .AddAttribute("ExpirationTime",
+                          "Time it takes for learned MAC state entry to expire.",
+                          TimeValue(Seconds(300)),
+                          MakeTimeAccessor(&SnicNetDevice::m_expirationTime),
+                          MakeTimeChecker());
     //.AddAttribute("InterframeGap",
     //"The time to wait between packet (frame) transmissions",
     // TimeValue(Seconds(0.0)),
@@ -61,16 +66,7 @@ SnicNetDevice::SnicNetDevice()
 
 SnicNetDevice::~SnicNetDevice()
 {
-    NS_LOG_FUNCTION(this);
-}
-
-void
-SnicNetDevice::AddPeerSnic(Ptr<SnicNetDevice> peerSnic)
-{
-  NS_LOG_FUNCTION_NOARGS();
-  NS_ASSERT(peerSnic != this);
-  NS_LOG_UNCOND("adding peer sNic");
-
+    NS_LOG_FUNCTION_NOARGS();
 }
 
 void
@@ -104,6 +100,46 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
     NS_LOG_UNCOND("after adding channel");
 }
 
+/*
+void
+SnicNetDevice::AddPeerSnic(Ptr<SnicNetDevice> peerSnic, Ptr<SnicChannel> ch)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_ASSERT(peerSnic != this);
+    NS_LOG_UNCOND("adding peer snic");
+
+    if (!Mac48Address::IsMatchingType(peerSnic->GetAddress()))
+    {
+        NS_FATAL_ERROR("Device does not support eui 48 addresses: cannot be added to bridge.");
+    }
+    if (!peerSnic->SupportsSendFrom())
+    {
+        NS_FATAL_ERROR("Device does not support SendFrom: cannot be added to bridge.");
+    }
+    if (m_address == Mac48Address())
+    {
+        m_address = Mac48Address::ConvertFrom(peerSnic->GetAddress());
+    }
+
+    NS_LOG_DEBUG("RegisterProtocolHandler for " << peerSnic->GetInstanceTypeId().GetName());
+    m_node->RegisterProtocolHandler(MakeCallback(&SnicNetDevice::ReceiveFromDevice, this),
+                                    0,
+                                    peerSnic,
+                                    true);
+
+    NS_LOG_UNCOND("adding channel");
+
+    m_ports.push_back(peerSnic);
+    m_channel->AddChannel(ch);
+    ch->Attach(this);
+    NS_LOG_UNCOND("after adding channel");
+}
+*/
+// bool
+// SnicNetDevice::Attach(Ptr<SnicChannel> ch)
+//{
+// }
+
 uint32_t
 SnicNetDevice::GetNSnicPorts() const
 {
@@ -122,6 +158,11 @@ void
 SnicNetDevice::DoDispose()
 {
     NS_LOG_FUNCTION(this);
+    for (std::vector<Ptr<NetDevice>>::iterator iter = m_ports.begin(); iter != m_ports.end();
+         iter++)
+    {
+        *iter = nullptr;
+    }
     m_node = nullptr;
     m_channel = nullptr;
     m_currentPkt = nullptr;
@@ -139,6 +180,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     Packet::EnablePrinting();
     NS_LOG_FUNCTION_NOARGS();
     NS_LOG_DEBUG("UID is " << packet->GetUid());
+    NS_LOG_DEBUG("id is " << m_node->GetId());
 
     Mac48Address src48 = Mac48Address::ConvertFrom(src);
     Mac48Address dst48 = Mac48Address::ConvertFrom(dst);
@@ -161,15 +203,17 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
 
     if (!m_promiscRxCallback.IsNull())
     {
+        NS_LOG_DEBUG("doing promisc");
         m_promiscRxCallback(this, packet, protocol, src, dst, packetType);
     }
+    NS_LOG_DEBUG("after promisc");
 
     switch (packetType)
     {
     case PACKET_HOST:
         if (dst48 == m_address)
         {
-            NS_LOG_DEBUG("learning ");
+            NS_LOG_DEBUG("packetType PACKET_HOST our address");
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
@@ -177,7 +221,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
 
     case PACKET_BROADCAST:
     case PACKET_MULTICAST:
-        NS_LOG_DEBUG("broadcast ");
+        NS_LOG_DEBUG("packetType PACKET_MULTICAST ");
         m_rxCallback(this, packet, protocol, src);
         ForwardBroadcast(incomingPort, packet, protocol, src48, dst48);
         break;
@@ -185,16 +229,25 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     case PACKET_OTHERHOST:
         if (dst48 == m_address)
         {
+            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, our address ");
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
         else
         {
-            NS_LOG_DEBUG("unicast ");
+            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, NOT our address ");
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
         }
         break;
     }
+    NS_LOG_DEBUG("Done================");
+}
+
+void
+SnicNetDevice::Receive(Ptr<Packet> p, Ptr<SnicNetDevice> sender)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_UNCOND("==========Receieved from peer Snic=======");
 }
 
 void
@@ -439,6 +492,7 @@ SnicNetDevice::SendFrom(Ptr<Packet> packet,
                                 uint16_t protocolNumber)
 {
     NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_UNCOND("NOW IN OTHER NIC");
 
     Mac48Address dst = Mac48Address::ConvertFrom(dest);
 
@@ -503,7 +557,7 @@ bool
 SnicNetDevice::SupportsSendFrom() const
 {
     NS_LOG_FUNCTION(this);
-    return false;
+    return true;
 }
 
 bool
