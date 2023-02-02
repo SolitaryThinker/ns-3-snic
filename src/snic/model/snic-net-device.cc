@@ -214,6 +214,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         if (dst48 == m_address)
         {
             NS_LOG_DEBUG("packetType PACKET_HOST our address");
+            // unwrap snic header
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
@@ -223,6 +224,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     case PACKET_MULTICAST:
         NS_LOG_DEBUG("packetType PACKET_MULTICAST ");
         m_rxCallback(this, packet, protocol, src);
+        // warp snic header
         ForwardBroadcast(incomingPort, packet, protocol, src48, dst48);
         break;
 
@@ -230,12 +232,14 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         if (dst48 == m_address)
         {
             NS_LOG_DEBUG("packetType PACKET_OTHERHOST, our address ");
+            // unwrap snic header
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
         else
         {
             NS_LOG_DEBUG("packetType PACKET_OTHERHOST, NOT our address ");
+            // wrap snic header
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
         }
         break;

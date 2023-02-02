@@ -85,6 +85,10 @@ set(source_files
     model/ripng-header.cc
     model/ripng.cc
     model/rtt-estimator.cc
+    model/snic-socket-factory-impl.cc
+    model/snic-socket-factory.cc
+    model/snic-socket-impl.cc
+    model/snic-socket.cc
     model/tcp-bbr.cc
     model/tcp-bic.cc
     model/tcp-congestion-ops.cc
@@ -211,6 +215,10 @@ set(header_files
     model/ripng-header.h
     model/ripng.h
     model/rtt-estimator.h
+    model/snic-socket-factory-impl.h
+    model/snic-socket-factory.h
+    model/snic-socket-impl.h
+    model/snic-socket.h
     model/tcp-bbr.h
     model/tcp-bic.h
     model/tcp-congestion-ops.h

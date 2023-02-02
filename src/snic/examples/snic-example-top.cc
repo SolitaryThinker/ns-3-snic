@@ -17,7 +17,7 @@ main(int argc, char* argv[])
     // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
 
