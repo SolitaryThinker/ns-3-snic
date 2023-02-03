@@ -27,3 +27,13 @@ build_lib_example(
         ${libcsma}
         ${libinternet}
 )
+
+build_lib_example(
+    NAME snic-example-socket
+    SOURCE_FILES snic-example-socket.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)
