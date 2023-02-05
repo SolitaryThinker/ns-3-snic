@@ -85,6 +85,7 @@ set(source_files
     model/ripng-header.cc
     model/ripng.cc
     model/rtt-estimator.cc
+    model/snic-l4-protocol.cc
     model/snic-socket-factory-impl.cc
     model/snic-socket-factory.cc
     model/snic-socket-impl.cc
@@ -215,6 +216,7 @@ set(header_files
     model/ripng-header.h
     model/ripng.h
     model/rtt-estimator.h
+    model/snic-l4-protocol.h
     model/snic-socket-factory-impl.h
     model/snic-socket-factory.h
     model/snic-socket-impl.h

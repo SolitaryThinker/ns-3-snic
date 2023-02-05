@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 UCSD WukLab, San Diego, USA
+ *
+ * Author: Will Lin <wlsaidhi@gmail.com>
+ */
+
 #ifndef SNIC_L4_PROTOCOL_H
 #define SNIC_L4_PROTOCOL_H
 

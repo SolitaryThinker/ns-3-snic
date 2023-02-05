@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 UCSD WukLab, San Diego, USA
+ *
+ * Author: Will Lin <wlsaidhi@gmail.com>
+ */
+
 #ifndef SNIC_NETWORK_TASK_H
 #define SNIC_NETWORK_TASK_H
 

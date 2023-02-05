@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 UCSD WukLab, San Diego, USA
+ *
+ * Author: Will Lin <wlsaidhi@gmail.com>
+ */
+
 #include "snic-l4-protocol.h"
 
 #include "ipv4-end-point-demux.h"
@@ -29,48 +35,48 @@ NS_LOG_COMPONENT_DEFINE("SnicL4Protocol");
 NS_OBJECT_ENSURE_REGISTERED(SnicL4Protocol);
 
 /* see http://www.iana.org/assignments/protocol-numbers */
-const uint8_t UdpL4Protocol::PROT_NUMBER = 17;
+const uint8_t SnicL4Protocol::PROT_NUMBER = 17;
 
 TypeId
-UdpL4Protocol::GetTypeId()
+SnicL4Protocol::GetTypeId()
 {
-    static TypeId tid = TypeId("ns3::UdpL4Protocol")
+    static TypeId tid = TypeId("ns3::SnicL4Protocol")
                             .SetParent<IpL4Protocol>()
                             .SetGroupName("Internet")
-                            .AddConstructor<UdpL4Protocol>()
+                            .AddConstructor<SnicL4Protocol>()
                             .AddAttribute("SocketList",
                                           "The list of sockets associated to this protocol.",
                                           ObjectVectorValue(),
-                                          MakeObjectVectorAccessor(&UdpL4Protocol::m_sockets),
-                                          MakeObjectVectorChecker<UdpSocketImpl>());
+                                          MakeObjectVectorAccessor(&SnicL4Protocol::m_sockets),
+                                          MakeObjectVectorChecker<SnicSocketImpl>());
     return tid;
 }
 
-UdpL4Protocol::UdpL4Protocol()
+SnicL4Protocol::SnicL4Protocol()
     : m_endPoints(new Ipv4EndPointDemux()),
       m_endPoints6(new Ipv6EndPointDemux())
 {
     NS_LOG_FUNCTION(this);
 }
 
-UdpL4Protocol::~UdpL4Protocol()
+SnicL4Protocol::~SnicL4Protocol()
 {
     NS_LOG_FUNCTION(this);
 }
 
 void
-UdpL4Protocol::SetNode(Ptr<Node> node)
+SnicL4Protocol::SetNode(Ptr<Node> node)
 {
     m_node = node;
 }
 
 /*
  * This method is called by AggregateObject and completes the aggregation
- * by setting the node in the udp stack and link it to the ipv4 object
+ * by setting the node in the snic stack and link it to the ipv4 object
  * present in the node along with the socket factory
  */
 void
-UdpL4Protocol::NotifyNewAggregate()
+SnicL4Protocol::NotifyNewAggregate()
 {
     NS_LOG_FUNCTION(this);
     Ptr<Node> node = this->GetObject<Node>();
@@ -82,9 +88,9 @@ UdpL4Protocol::NotifyNewAggregate()
         if (node && (ipv4 || ipv6))
         {
             this->SetNode(node);
-            Ptr<UdpSocketFactoryImpl> udpFactory = CreateObject<UdpSocketFactoryImpl>();
-            udpFactory->SetUdp(this);
-            node->AggregateObject(udpFactory);
+            Ptr<SnicSocketFactoryImpl> snicFactory = CreateObject<SnicSocketFactoryImpl>();
+            snicFactory->SetSnic(this);
+            node->AggregateObject(snicFactory);
         }
     }
 
@@ -107,16 +113,17 @@ UdpL4Protocol::NotifyNewAggregate()
 }
 
 int
-UdpL4Protocol::GetProtocolNumber() const
+SnicL4Protocol::GetProtocolNumber() const
 {
     return PROT_NUMBER;
 }
 
 void
-UdpL4Protocol::DoDispose()
+SnicL4Protocol::DoDispose()
 {
     NS_LOG_FUNCTION(this);
-    for (std::vector<Ptr<UdpSocketImpl>>::iterator i = m_sockets.begin(); i != m_sockets.end(); i++)
+    for (std::vector<Ptr<SnicSocketImpl>>::iterator i = m_sockets.begin(); i != m_sockets.end();
+         i++)
     {
         *i = nullptr;
     }
@@ -142,117 +149,117 @@ UdpL4Protocol::DoDispose()
 }
 
 Ptr<Socket>
-UdpL4Protocol::CreateSocket()
+SnicL4Protocol::CreateSocket()
 {
     NS_LOG_FUNCTION(this);
-    Ptr<UdpSocketImpl> socket = CreateObject<UdpSocketImpl>();
+    Ptr<SnicSocketImpl> socket = CreateObject<SnicSocketImpl>();
     socket->SetNode(m_node);
-    socket->SetUdp(this);
+    socket->SetSnic(this);
     m_sockets.push_back(socket);
     return socket;
 }
 
 Ipv4EndPoint*
-UdpL4Protocol::Allocate()
+SnicL4Protocol::Allocate()
 {
     NS_LOG_FUNCTION(this);
     return m_endPoints->Allocate();
 }
 
 Ipv4EndPoint*
-UdpL4Protocol::Allocate(Ipv4Address address)
+SnicL4Protocol::Allocate(Ipv4Address address)
 {
     NS_LOG_FUNCTION(this << address);
     return m_endPoints->Allocate(address);
 }
 
 Ipv4EndPoint*
-UdpL4Protocol::Allocate(Ptr<NetDevice> boundNetDevice, uint16_t port)
+SnicL4Protocol::Allocate(Ptr<NetDevice> boundNetDevice, uint16_t port)
 {
     NS_LOG_FUNCTION(this << boundNetDevice << port);
     return m_endPoints->Allocate(boundNetDevice, port);
 }
 
 Ipv4EndPoint*
-UdpL4Protocol::Allocate(Ptr<NetDevice> boundNetDevice, Ipv4Address address, uint16_t port)
+SnicL4Protocol::Allocate(Ptr<NetDevice> boundNetDevice, Ipv4Address address, uint16_t port)
 {
     NS_LOG_FUNCTION(this << boundNetDevice << address << port);
     return m_endPoints->Allocate(boundNetDevice, address, port);
 }
 
 Ipv4EndPoint*
-UdpL4Protocol::Allocate(Ptr<NetDevice> boundNetDevice,
-                        Ipv4Address localAddress,
-                        uint16_t localPort,
-                        Ipv4Address peerAddress,
-                        uint16_t peerPort)
+SnicL4Protocol::Allocate(Ptr<NetDevice> boundNetDevice,
+                         Ipv4Address localAddress,
+                         uint16_t localPort,
+                         Ipv4Address peerAddress,
+                         uint16_t peerPort)
 {
     NS_LOG_FUNCTION(this << boundNetDevice << localAddress << localPort << peerAddress << peerPort);
     return m_endPoints->Allocate(boundNetDevice, localAddress, localPort, peerAddress, peerPort);
 }
 
 void
-UdpL4Protocol::DeAllocate(Ipv4EndPoint* endPoint)
+SnicL4Protocol::DeAllocate(Ipv4EndPoint* endPoint)
 {
     NS_LOG_FUNCTION(this << endPoint);
     m_endPoints->DeAllocate(endPoint);
 }
 
 Ipv6EndPoint*
-UdpL4Protocol::Allocate6()
+SnicL4Protocol::Allocate6()
 {
     NS_LOG_FUNCTION(this);
     return m_endPoints6->Allocate();
 }
 
 Ipv6EndPoint*
-UdpL4Protocol::Allocate6(Ipv6Address address)
+SnicL4Protocol::Allocate6(Ipv6Address address)
 {
     NS_LOG_FUNCTION(this << address);
     return m_endPoints6->Allocate(address);
 }
 
 Ipv6EndPoint*
-UdpL4Protocol::Allocate6(Ptr<NetDevice> boundNetDevice, uint16_t port)
+SnicL4Protocol::Allocate6(Ptr<NetDevice> boundNetDevice, uint16_t port)
 {
     NS_LOG_FUNCTION(this << boundNetDevice << port);
     return m_endPoints6->Allocate(boundNetDevice, port);
 }
 
 Ipv6EndPoint*
-UdpL4Protocol::Allocate6(Ptr<NetDevice> boundNetDevice, Ipv6Address address, uint16_t port)
+SnicL4Protocol::Allocate6(Ptr<NetDevice> boundNetDevice, Ipv6Address address, uint16_t port)
 {
     NS_LOG_FUNCTION(this << boundNetDevice << address << port);
     return m_endPoints6->Allocate(boundNetDevice, address, port);
 }
 
 Ipv6EndPoint*
-UdpL4Protocol::Allocate6(Ptr<NetDevice> boundNetDevice,
-                         Ipv6Address localAddress,
-                         uint16_t localPort,
-                         Ipv6Address peerAddress,
-                         uint16_t peerPort)
+SnicL4Protocol::Allocate6(Ptr<NetDevice> boundNetDevice,
+                          Ipv6Address localAddress,
+                          uint16_t localPort,
+                          Ipv6Address peerAddress,
+                          uint16_t peerPort)
 {
     NS_LOG_FUNCTION(this << boundNetDevice << localAddress << localPort << peerAddress << peerPort);
     return m_endPoints6->Allocate(boundNetDevice, localAddress, localPort, peerAddress, peerPort);
 }
 
 void
-UdpL4Protocol::DeAllocate(Ipv6EndPoint* endPoint)
+SnicL4Protocol::DeAllocate(Ipv6EndPoint* endPoint)
 {
     NS_LOG_FUNCTION(this << endPoint);
     m_endPoints6->DeAllocate(endPoint);
 }
 
 void
-UdpL4Protocol::ReceiveIcmp(Ipv4Address icmpSource,
-                           uint8_t icmpTtl,
-                           uint8_t icmpType,
-                           uint8_t icmpCode,
-                           uint32_t icmpInfo,
-                           Ipv4Address payloadSource,
-                           Ipv4Address payloadDestination,
-                           const uint8_t payload[8])
+SnicL4Protocol::ReceiveIcmp(Ipv4Address icmpSource,
+                            uint8_t icmpTtl,
+                            uint8_t icmpType,
+                            uint8_t icmpCode,
+                            uint32_t icmpInfo,
+                            Ipv4Address payloadSource,
+                            Ipv4Address payloadDestination,
+                            const uint8_t payload[8])
 {
     NS_LOG_FUNCTION(this << icmpSource << icmpTtl << icmpType << icmpCode << icmpInfo
                          << payloadSource << payloadDestination);
@@ -277,14 +284,14 @@ UdpL4Protocol::ReceiveIcmp(Ipv4Address icmpSource,
 }
 
 void
-UdpL4Protocol::ReceiveIcmp(Ipv6Address icmpSource,
-                           uint8_t icmpTtl,
-                           uint8_t icmpType,
-                           uint8_t icmpCode,
-                           uint32_t icmpInfo,
-                           Ipv6Address payloadSource,
-                           Ipv6Address payloadDestination,
-                           const uint8_t payload[8])
+SnicL4Protocol::ReceiveIcmp(Ipv6Address icmpSource,
+                            uint8_t icmpTtl,
+                            uint8_t icmpType,
+                            uint8_t icmpCode,
+                            uint32_t icmpInfo,
+                            Ipv6Address payloadSource,
+                            Ipv6Address payloadDestination,
+                            const uint8_t payload[8])
 {
     NS_LOG_FUNCTION(this << icmpSource << icmpTtl << icmpType << icmpCode << icmpInfo
                          << payloadSource << payloadDestination);
@@ -310,42 +317,42 @@ UdpL4Protocol::ReceiveIcmp(Ipv6Address icmpSource,
 }
 
 enum IpL4Protocol::RxStatus
-UdpL4Protocol::Receive(Ptr<Packet> packet, const Ipv4Header& header, Ptr<Ipv4Interface> interface)
+SnicL4Protocol::Receive(Ptr<Packet> packet, const Ipv4Header& header, Ptr<Ipv4Interface> interface)
 {
     NS_LOG_FUNCTION(this << packet << header);
-    UdpHeader udpHeader;
+    SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
-        udpHeader.EnableChecksums();
+        snicHeader.EnableChecksums();
     }
 
-    udpHeader.InitializeChecksum(header.GetSource(), header.GetDestination(), PROT_NUMBER);
+    snicHeader.InitializeChecksum(header.GetSource(), header.GetDestination(), PROT_NUMBER);
 
     // We only peek at the header for now (instead of removing it) so that it will be intact
     // if we have to pass it to a IPv6 endpoint via:
     //
-    //   UdpL4Protocol::Receive (Ptr<Packet> packet, Ipv6Address &src, Ipv6Address &dst, ...)
+    //   SnicL4Protocol::Receive (Ptr<Packet> packet, Ipv6Address &src, Ipv6Address &dst, ...)
 
-    packet->PeekHeader(udpHeader);
+    packet->PeekHeader(snicHeader);
 
-    if (!udpHeader.IsChecksumOk())
+    if (!snicHeader.IsChecksumOk())
     {
         NS_LOG_INFO("Bad checksum : dropping packet!");
         return IpL4Protocol::RX_CSUM_FAILED;
     }
 
     NS_LOG_DEBUG("Looking up dst " << header.GetDestination() << " port "
-                                   << udpHeader.GetDestinationPort());
+                                   << snicHeader.GetDestinationPort());
     Ipv4EndPointDemux::EndPoints endPoints = m_endPoints->Lookup(header.GetDestination(),
-                                                                 udpHeader.GetDestinationPort(),
+                                                                 snicHeader.GetDestinationPort(),
                                                                  header.GetSource(),
-                                                                 udpHeader.GetSourcePort(),
+                                                                 snicHeader.GetSourcePort(),
                                                                  interface);
     if (endPoints.empty())
     {
         if (this->GetObject<Ipv6L3Protocol>())
         {
-            NS_LOG_LOGIC("  No Ipv4 endpoints matched on UdpL4Protocol, trying Ipv6 " << this);
+            NS_LOG_LOGIC("  No Ipv4 endpoints matched on SnicL4Protocol, trying Ipv6 " << this);
             Ptr<Ipv6Interface> fakeInterface;
             Ipv6Header ipv6Header;
             Ipv6Address src = Ipv6Address::MakeIpv4MappedAddress(header.GetSource());
@@ -359,41 +366,41 @@ UdpL4Protocol::Receive(Ptr<Packet> packet, const Ipv4Header& header, Ptr<Ipv4Int
         return IpL4Protocol::RX_ENDPOINT_UNREACH;
     }
 
-    packet->RemoveHeader(udpHeader);
+    packet->RemoveHeader(snicHeader);
     for (Ipv4EndPointDemux::EndPointsI endPoint = endPoints.begin(); endPoint != endPoints.end();
          endPoint++)
     {
-        (*endPoint)->ForwardUp(packet->Copy(), header, udpHeader.GetSourcePort(), interface);
+        (*endPoint)->ForwardUp(packet->Copy(), header, snicHeader.GetSourcePort(), interface);
     }
     return IpL4Protocol::RX_OK;
 }
 
 enum IpL4Protocol::RxStatus
-UdpL4Protocol::Receive(Ptr<Packet> packet, const Ipv6Header& header, Ptr<Ipv6Interface> interface)
+SnicL4Protocol::Receive(Ptr<Packet> packet, const Ipv6Header& header, Ptr<Ipv6Interface> interface)
 {
     NS_LOG_FUNCTION(this << packet << header.GetSource() << header.GetDestination());
-    UdpHeader udpHeader;
+    SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
-        udpHeader.EnableChecksums();
+        snicHeader.EnableChecksums();
     }
 
-    udpHeader.InitializeChecksum(header.GetSource(), header.GetDestination(), PROT_NUMBER);
+    snicHeader.InitializeChecksum(header.GetSource(), header.GetDestination(), PROT_NUMBER);
 
-    packet->RemoveHeader(udpHeader);
+    packet->RemoveHeader(snicHeader);
 
-    if (!udpHeader.IsChecksumOk() && !header.GetSource().IsIpv4MappedAddress())
+    if (!snicHeader.IsChecksumOk() && !header.GetSource().IsIpv4MappedAddress())
     {
         NS_LOG_INFO("Bad checksum : dropping packet!");
         return IpL4Protocol::RX_CSUM_FAILED;
     }
 
     NS_LOG_DEBUG("Looking up dst " << header.GetDestination() << " port "
-                                   << udpHeader.GetDestinationPort());
+                                   << snicHeader.GetDestinationPort());
     Ipv6EndPointDemux::EndPoints endPoints = m_endPoints6->Lookup(header.GetDestination(),
-                                                                  udpHeader.GetDestinationPort(),
+                                                                  snicHeader.GetDestinationPort(),
                                                                   header.GetSource(),
-                                                                  udpHeader.GetSourcePort(),
+                                                                  snicHeader.GetSourcePort(),
                                                                   interface);
     if (endPoints.empty())
     {
@@ -403,127 +410,127 @@ UdpL4Protocol::Receive(Ptr<Packet> packet, const Ipv6Header& header, Ptr<Ipv6Int
     for (Ipv6EndPointDemux::EndPointsI endPoint = endPoints.begin(); endPoint != endPoints.end();
          endPoint++)
     {
-        (*endPoint)->ForwardUp(packet->Copy(), header, udpHeader.GetSourcePort(), interface);
+        (*endPoint)->ForwardUp(packet->Copy(), header, snicHeader.GetSourcePort(), interface);
     }
     return IpL4Protocol::RX_OK;
 }
 
 void
-UdpL4Protocol::Send(Ptr<Packet> packet,
-                    Ipv4Address saddr,
-                    Ipv4Address daddr,
-                    uint16_t sport,
-                    uint16_t dport)
+SnicL4Protocol::Send(Ptr<Packet> packet,
+                     Ipv4Address saddr,
+                     Ipv4Address daddr,
+                     uint16_t sport,
+                     uint16_t dport)
 {
     NS_LOG_FUNCTION(this << packet << saddr << daddr << sport << dport);
 
-    UdpHeader udpHeader;
+    SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
-        udpHeader.EnableChecksums();
-        udpHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
+        snicHeader.EnableChecksums();
+        snicHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
     }
-    udpHeader.SetDestinationPort(dport);
-    udpHeader.SetSourcePort(sport);
+    snicHeader.SetDestinationPort(dport);
+    snicHeader.SetSourcePort(sport);
 
-    packet->AddHeader(udpHeader);
+    packet->AddHeader(snicHeader);
 
     m_downTarget(packet, saddr, daddr, PROT_NUMBER, nullptr);
 }
 
 void
-UdpL4Protocol::Send(Ptr<Packet> packet,
-                    Ipv4Address saddr,
-                    Ipv4Address daddr,
-                    uint16_t sport,
-                    uint16_t dport,
-                    Ptr<Ipv4Route> route)
+SnicL4Protocol::Send(Ptr<Packet> packet,
+                     Ipv4Address saddr,
+                     Ipv4Address daddr,
+                     uint16_t sport,
+                     uint16_t dport,
+                     Ptr<Ipv4Route> route)
 {
     NS_LOG_FUNCTION(this << packet << saddr << daddr << sport << dport << route);
 
-    UdpHeader udpHeader;
+    SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
-        udpHeader.EnableChecksums();
-        udpHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
+        snicHeader.EnableChecksums();
+        snicHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
     }
-    udpHeader.SetDestinationPort(dport);
-    udpHeader.SetSourcePort(sport);
+    snicHeader.SetDestinationPort(dport);
+    snicHeader.SetSourcePort(sport);
 
-    packet->AddHeader(udpHeader);
+    packet->AddHeader(snicHeader);
 
     m_downTarget(packet, saddr, daddr, PROT_NUMBER, route);
 }
 
 void
-UdpL4Protocol::Send(Ptr<Packet> packet,
-                    Ipv6Address saddr,
-                    Ipv6Address daddr,
-                    uint16_t sport,
-                    uint16_t dport)
+SnicL4Protocol::Send(Ptr<Packet> packet,
+                     Ipv6Address saddr,
+                     Ipv6Address daddr,
+                     uint16_t sport,
+                     uint16_t dport)
 {
     NS_LOG_FUNCTION(this << packet << saddr << daddr << sport << dport);
 
-    UdpHeader udpHeader;
+    SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
-        udpHeader.EnableChecksums();
-        udpHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
+        snicHeader.EnableChecksums();
+        snicHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
     }
-    udpHeader.SetDestinationPort(dport);
-    udpHeader.SetSourcePort(sport);
+    snicHeader.SetDestinationPort(dport);
+    snicHeader.SetSourcePort(sport);
 
-    packet->AddHeader(udpHeader);
+    packet->AddHeader(snicHeader);
 
     m_downTarget6(packet, saddr, daddr, PROT_NUMBER, nullptr);
 }
 
 void
-UdpL4Protocol::Send(Ptr<Packet> packet,
-                    Ipv6Address saddr,
-                    Ipv6Address daddr,
-                    uint16_t sport,
-                    uint16_t dport,
-                    Ptr<Ipv6Route> route)
+SnicL4Protocol::Send(Ptr<Packet> packet,
+                     Ipv6Address saddr,
+                     Ipv6Address daddr,
+                     uint16_t sport,
+                     uint16_t dport,
+                     Ptr<Ipv6Route> route)
 {
     NS_LOG_FUNCTION(this << packet << saddr << daddr << sport << dport << route);
 
-    UdpHeader udpHeader;
+    SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
-        udpHeader.EnableChecksums();
-        udpHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
+        snicHeader.EnableChecksums();
+        snicHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
     }
-    udpHeader.SetDestinationPort(dport);
-    udpHeader.SetSourcePort(sport);
+    snicHeader.SetDestinationPort(dport);
+    snicHeader.SetSourcePort(sport);
 
-    packet->AddHeader(udpHeader);
+    packet->AddHeader(snicHeader);
 
     m_downTarget6(packet, saddr, daddr, PROT_NUMBER, route);
 }
 
 void
-UdpL4Protocol::SetDownTarget(IpL4Protocol::DownTargetCallback callback)
+SnicL4Protocol::SetDownTarget(IpL4Protocol::DownTargetCallback callback)
 {
     NS_LOG_FUNCTION(this);
     m_downTarget = callback;
 }
 
 IpL4Protocol::DownTargetCallback
-UdpL4Protocol::GetDownTarget() const
+SnicL4Protocol::GetDownTarget() const
 {
     return m_downTarget;
 }
 
 void
-UdpL4Protocol::SetDownTarget6(IpL4Protocol::DownTargetCallback6 callback)
+SnicL4Protocol::SetDownTarget6(IpL4Protocol::DownTargetCallback6 callback)
 {
     NS_LOG_FUNCTION(this);
     m_downTarget6 = callback;
 }
 
 IpL4Protocol::DownTargetCallback6
-UdpL4Protocol::GetDownTarget6() const
+SnicL4Protocol::GetDownTarget6() const
 {
     return m_downTarget6;
 }

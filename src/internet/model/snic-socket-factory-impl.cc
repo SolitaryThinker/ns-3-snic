@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2023 UCSD WukLab, San Diego, USA
+ *
+ * Author: Will Lin <wlsaidhi@gmail.com>
+ */
+
 #include "snic-socket-factory-impl.h"
 
 #include "ipv4-l3-protocol.h"

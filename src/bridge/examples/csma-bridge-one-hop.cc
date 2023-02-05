@@ -107,6 +107,8 @@ main(int argc, char* argv[])
     // Explicitly create the nodes required by the topology (shown above).
     //
     NS_LOG_INFO("Create nodes.");
+    LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO);
+    LogComponentEnable("PacketSink", LOG_LEVEL_INFO);
 
     Ptr<Node> n0 = CreateObject<Node>();
     Ptr<Node> n1 = CreateObject<Node>();
