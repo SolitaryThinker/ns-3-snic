@@ -16,9 +16,9 @@ main(int argc, char* argv[])
 
     // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
-     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("UdpEchoClientApplication", LOG_LEVEL_INFO);
-    LogComponentEnable("UdpEchoServerApplication", LOG_LEVEL_INFO);
+    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicEchoClientApplication", LOG_LEVEL_INFO);
+    LogComponentEnable("SnicEchoServerApplication", LOG_LEVEL_INFO);
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("verbose", "Tell application to log if true", verbose);
@@ -60,7 +60,7 @@ main(int argc, char* argv[])
     swtch.Install(switchNode, switchDevices);
 
     // Add internet stack to the terminals
-    InternetStackHelper internet;
+    SnicStackHelper internet;
     internet.Install(terminals);
 
     // We've got the "hardware" in place.  Now we need to add IP addresses.
@@ -73,13 +73,13 @@ main(int argc, char* argv[])
     NS_LOG_INFO("Create Applications.");
     // uint16_t port = 9; // Discard port (RFC 863)
 
-    UdpEchoServerHelper echoServer(9);
+    SnicEchoServerHelper echoServer(9);
 
     ApplicationContainer serverApps = echoServer.Install(terminals.Get(1));
     serverApps.Start(Seconds(1.0));
     serverApps.Stop(Seconds(10.0));
 
-    UdpEchoClientHelper echoClient(interfaces.GetAddress(1), 9);
+    SnicEchoClientHelper echoClient(interfaces.GetAddress(1), 9);
     echoClient.SetAttribute("MaxPackets", UintegerValue(1));
     echoClient.SetAttribute("Interval", TimeValue(Seconds(1.0)));
     echoClient.SetAttribute("PacketSize", UintegerValue(1024));

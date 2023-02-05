@@ -15,6 +15,7 @@ set(source_files
     helper/neighbor-cache-helper.cc
     helper/rip-helper.cc
     helper/ripng-helper.cc
+    helper/snic-stack-helper.cc
     model/arp-cache.cc
     model/arp-header.cc
     model/arp-l3-protocol.cc
@@ -152,6 +153,7 @@ set(header_files
     helper/neighbor-cache-helper.h
     helper/rip-helper.h
     helper/ripng-helper.h
+    helper/snic-stack-helper.h
     model/arp-cache.h
     model/arp-header.h
     model/arp-l3-protocol.h
