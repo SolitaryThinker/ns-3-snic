@@ -6,9 +6,9 @@
 
 #include "snic-socket-factory-impl.h"
 
-#include "ipv4-l3-protocol.h"
+#include "snic-l4-protocol.h"
 
-#include "ns3/log.h"
+#include "ns3/assert.h"
 #include "ns3/socket.h"
 
 namespace ns3

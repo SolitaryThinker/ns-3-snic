@@ -21,26 +21,26 @@ class SnicHeader : public Header
 {
   public:
     SnicHeader();
-    ~UdpHeader() override;
+    ~SnicHeader() override;
 
     /**
-     * \brief Enable checksum calculation for UDP
+     * \brief Enable checksum calculation for SNIC
      */
     void EnableChecksums();
     /**
-     * \param port the destination port for this UdpHeader
+     * \param port the destination port for this SnicHeader
      */
     void SetDestinationPort(uint16_t port);
     /**
-     * \param port The source port for this UdpHeader
+     * \param port The source port for this SnicHeader
      */
     void SetSourcePort(uint16_t port);
     /**
-     * \return The source port for this UdpHeader
+     * \return The source port for this SnicHeader
      */
     uint16_t GetSourcePort() const;
     /**
-     * \return the destination port for this UdpHeader
+     * \return the destination port for this SnicHeader
      */
     uint16_t GetDestinationPort() const;
 
@@ -52,7 +52,7 @@ class SnicHeader : public Header
      * \param protocol the protocol number to use in the underlying
      *        ip packet.
      *
-     * If you want to use udp checksums, you should call this
+     * If you want to use snic checksums, you should call this
      * method prior to adding the header to a packet.
      */
     void InitializeChecksum(Address source, Address destination, uint8_t protocol);
@@ -65,7 +65,7 @@ class SnicHeader : public Header
      * \param protocol the protocol number to use in the underlying
      *        ip packet.
      *
-     * If you want to use udp checksums, you should call this
+     * If you want to use snic checksums, you should call this
      * method prior to adding the header to a packet.
      */
     void InitializeChecksum(Ipv4Address source, Ipv4Address destination, uint8_t protocol);
@@ -78,7 +78,7 @@ class SnicHeader : public Header
      * \param protocol the protocol number to use in the underlying
      *        ip packet.
      *
-     * If you want to use udp checksums, you should call this
+     * If you want to use snic checksums, you should call this
      * method prior to adding the header to a packet.
      */
     void InitializeChecksum(Ipv6Address source, Ipv6Address destination, uint8_t protocol);
@@ -95,22 +95,22 @@ class SnicHeader : public Header
     uint32_t Deserialize(Buffer::Iterator start) override;
 
     /**
-     * \brief Is the UDP checksum correct ?
+     * \brief Is the SNIC checksum correct ?
      * \returns true if the checksum is correct, false otherwise.
      */
     bool IsChecksumOk() const;
 
     /**
-     * \brief Force the UDP checksum to a given value.
+     * \brief Force the SNIC checksum to a given value.
      *
      * This might be useful for test purposes or to
-     * restore the UDP checksum when the UDP header
+     * restore the SNIC checksum when the SNIC header
      * has been compressed (e.g., in 6LoWPAN).
      * Note that, normally, the header checksum is
      * calculated on the fly when the packet is
      * serialized.
      *
-     * When this option is used, the UDP checksum is written in
+     * When this option is used, the SNIC checksum is written in
      * the header, regardless of the global ChecksumEnabled option.
      *
      * \note The checksum value must be a big endian number.
@@ -120,7 +120,7 @@ class SnicHeader : public Header
     void ForceChecksum(uint16_t checksum);
 
     /**
-     * \brief Force the UDP payload length to a given value.
+     * \brief Force the SNIC payload length to a given value.
      *
      * This might be useful when forging a packet for test
      * purposes.
@@ -131,7 +131,7 @@ class SnicHeader : public Header
 
     /**
      * \brief Return the checksum (only known after a Deserialize)
-     * \return The checksum for this UdpHeader
+     * \return The checksum for this SnicHeader
      */
     uint16_t GetChecksum();
 
