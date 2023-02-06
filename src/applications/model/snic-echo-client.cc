@@ -8,6 +8,7 @@
 #include "ns3/nstime.h"
 #include "ns3/packet.h"
 #include "ns3/simulator.h"
+#include "ns3/snic-header.h"
 #include "ns3/socket-factory.h"
 #include "ns3/socket.h"
 #include "ns3/trace-source-accessor.h"
@@ -326,6 +327,14 @@ SnicEchoClient::Send()
         //
         p = Create<Packet>(m_size);
     }
+    NS_LOG_INFO("adding snic header in client");
+    SnicHeader header;
+    header.AddNT(5);
+    p->AddHeader(header);
+    NS_LOG_INFO("after adding snic header in client" << header.GetNT());
+    SnicHeader newheader;
+    p->PeekHeader(newheader);
+    NS_LOG_INFO("after adding snic header in client" << newheader.GetNT());
     Address localAddress;
     m_socket->GetSockName(localAddress);
     // call to the trace sinks before the packet is actually sent,

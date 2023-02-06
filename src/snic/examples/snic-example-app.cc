@@ -9,6 +9,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("SnicExample");
 
+/* simple snic connection using udp sockets and applications */
 int
 main(int argc, char* argv[])
 {

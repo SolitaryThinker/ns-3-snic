@@ -19,6 +19,8 @@ class NetworkTaskAddN : public NetworkTask
     ~NetworkTaskAddN();
 
     void ProcessPacket(Ptr<Packet> packet) override;
+    void SetIncrement(uint32_t increment);
+    uint32_t GetIncrement();
 
   private:
     uint32_t m_increment; // value added to packet payload

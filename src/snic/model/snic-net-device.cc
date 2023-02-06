@@ -6,16 +6,16 @@
 
 #include "snic-net-device.h"
 
-
 #include "ns3/boolean.h"
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
 #include "ns3/pointer.h"
 #include "ns3/simulator.h"
+#include "ns3/snic-header.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/uinteger.h"
 
-namespace ns3
+    namespace ns3
 {
 NS_LOG_COMPONENT_DEFINE("SnicNetDevice");
 
@@ -190,16 +190,16 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     // NS_LOG_DEBUG("dest is " << InetSocketAddress::ConvertFrom(dst));
     NS_LOG_DEBUG("m_address is " << m_address);
     NS_LOG_DEBUG("packetType is " << packetType);
-    Ipv4Header udpHeader;
+    SnicHeader snicHeader;
     Ptr<Packet> copypkt = packet->Copy();
-    copypkt->RemoveHeader(udpHeader);
+    copypkt->RemoveHeader(snicHeader);
     std::ostringstream coll;
 
-    // packet->Print(coll);
-    udpHeader.Print(coll);
+    packet->Print(coll);
+    // snicHeader.Print(coll);
 
     NS_LOG_DEBUG("header is " << coll.str());
-
+    NS_LOG_DEBUG("header nt is " << snicHeader.GetNT());
 
     if (!m_promiscRxCallback.IsNull())
     {

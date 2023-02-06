@@ -13,7 +13,7 @@ NetworkTask::NetworkTask()
 {
 }
 
-~NetworkTask::NetworkTask()
+NetworkTask::~NetworkTask()
 {
 }
 

@@ -260,4 +260,14 @@ SnicHelper::ConnectTwoSnic(NetDeviceContainer snic1, NetDeviceContainer snic2)
     // s1->AddPeerSnic(s2, ch);
     // s2->AddPeerSnic(s1, ch);
 }
+
+void
+SnicHelper::CreateAndAggregateObjectFromTypeId(Ptr<NetDevice> device, const std::string typeId)
+{
+    ObjectFactory factory;
+    factory.SetTypeId(typeId);
+    Ptr<Object> networkTask = factory.Create<Object>();
+    device->AggregateObject(networkTask);
+}
+
 } // namespace ns3

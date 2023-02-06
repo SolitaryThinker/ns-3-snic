@@ -22,6 +22,7 @@ NS_OBJECT_ENSURE_REGISTERED(SnicHeader);
 SnicHeader::SnicHeader()
     : m_sourcePort(0xfffd),
       m_destinationPort(0xfffd),
+      m_nt(0),
       m_payloadSize(0),
       m_checksum(0),
       m_calcChecksum(false),
@@ -34,6 +35,18 @@ SnicHeader::~SnicHeader()
     m_sourcePort = 0xfffe;
     m_destinationPort = 0xfffe;
     m_payloadSize = 0xfffe;
+}
+
+void
+SnicHeader::AddNT(uint64_t nt)
+{
+    m_nt = nt;
+}
+
+uint64_t
+SnicHeader::GetNT()
+{
+    return m_nt;
 }
 
 void
@@ -161,7 +174,7 @@ SnicHeader::GetInstanceTypeId() const
 void
 SnicHeader::Print(std::ostream& os) const
 {
-    os << "length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
+    os << "snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
        << m_destinationPort;
 }
 
@@ -178,6 +191,7 @@ SnicHeader::Serialize(Buffer::Iterator start) const
 
     i.WriteHtonU16(m_sourcePort);
     i.WriteHtonU16(m_destinationPort);
+    i.WriteHtonU16(m_nt);
     if (m_payloadSize == 0)
     {
         i.WriteHtonU16(start.GetSize());
@@ -214,6 +228,7 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     Buffer::Iterator i = start;
     m_sourcePort = i.ReadNtohU16();
     m_destinationPort = i.ReadNtohU16();
+    m_nt = i.ReadNtohU16();
     m_payloadSize = i.ReadNtohU16() - GetSerializedSize();
     m_checksum = i.ReadU16();
 

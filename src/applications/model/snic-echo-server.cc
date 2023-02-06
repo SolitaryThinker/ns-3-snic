@@ -157,6 +157,12 @@ SnicEchoServer::HandleRead(Ptr<Socket> socket)
                                    << packet->GetSize() << " bytes from "
                                    << InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
                                    << InetSocketAddress::ConvertFrom(from).GetPort());
+            std::ostringstream coll;
+            packet->Print(coll);
+            NS_LOG_DEBUG("packet content is " << coll.str());
+            uint8_t buffer[10];
+            packet->CopyData((uint8_t*)&buffer, 5);
+            NS_LOG_DEBUG("packet is " << buffer);
         }
         else if (Inet6SocketAddress::IsMatchingType(from))
         {

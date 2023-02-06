@@ -366,7 +366,7 @@ SnicL4Protocol::Receive(Ptr<Packet> packet, const Ipv4Header& header, Ptr<Ipv4In
         return IpL4Protocol::RX_ENDPOINT_UNREACH;
     }
 
-    packet->RemoveHeader(snicHeader);
+    // packet->RemoveHeader(snicHeader);
     for (Ipv4EndPointDemux::EndPointsI endPoint = endPoints.begin(); endPoint != endPoints.end();
          endPoint++)
     {
@@ -423,6 +423,7 @@ SnicL4Protocol::Send(Ptr<Packet> packet,
                      uint16_t dport)
 {
     NS_LOG_FUNCTION(this << packet << saddr << daddr << sport << dport);
+    NS_LOG_UNCOND("Hi this is in the snicl4 protocol send()");
 
     SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
@@ -447,10 +448,19 @@ SnicL4Protocol::Send(Ptr<Packet> packet,
                      Ptr<Ipv4Route> route)
 {
     NS_LOG_FUNCTION(this << packet << saddr << daddr << sport << dport << route);
-
+    NS_LOG_UNCOND("Hi this is in the snicl4 protocol send2()");
     SnicHeader snicHeader;
+    packet->RemoveHeader(snicHeader);
+    NS_LOG_UNCOND("after removeheader: " << snicHeader.GetNT());
+
+    std::ostringstream coll;
+    packet->PrintPacketTags(coll);
+    NS_LOG_UNCOND("pkt tags removeheader: " << coll.str());
+
+    // SnicHeader snicHeader;
     if (Node::ChecksumEnabled())
     {
+        NS_LOG_UNCOND("in checksum");
         snicHeader.EnableChecksums();
         snicHeader.InitializeChecksum(saddr, daddr, PROT_NUMBER);
     }

@@ -17,11 +17,16 @@
 namespace ns3
 {
 
-class SnicHeader : public Header
+class SnicAppHeader : public Header
 {
   public:
     SnicHeader();
     ~SnicHeader() override;
+
+    void AddNT(uint64_t nt);
+
+    /* returns 0 if no NT */
+    uint64_t GetNT();
 
     /**
      * \brief Enable checksum calculation for SNIC
@@ -145,6 +150,7 @@ class SnicHeader : public Header
     uint16_t CalculateHeaderChecksum(uint16_t size) const;
     uint16_t m_sourcePort;      //!< Source port
     uint16_t m_destinationPort; //!< Destination port
+    uint16_t m_nt;
     uint16_t m_payloadSize;     //!< Payload size
 
     Address m_source;      //!< Source IP address

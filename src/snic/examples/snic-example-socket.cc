@@ -9,6 +9,7 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("SnicExample");
 
+/* single snic application using snic protocols and sockets */
 int
 main(int argc, char* argv[])
 {
@@ -16,7 +17,12 @@ main(int argc, char* argv[])
 
     // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
+    // Ipv4L3Protocol
+    LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("NetworkTaskAddN", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicL4Protocol", LOG_LEVEL_INFO);
     LogComponentEnable("SnicEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("SnicEchoServerApplication", LOG_LEVEL_INFO);
 
@@ -85,6 +91,10 @@ main(int argc, char* argv[])
     echoClient.SetAttribute("PacketSize", UintegerValue(1024));
 
     ApplicationContainer clientApps = echoClient.Install(terminals.Get(0));
+    Ptr<SnicEchoClient> client = DynamicCast<SnicEchoClient, Application>(clientApps.Get(0));
+    client->SetFill(0, 8);
+    Packet::EnablePrinting();
+
     clientApps.Start(Seconds(2.0));
     clientApps.Stop(Seconds(10.0));
 

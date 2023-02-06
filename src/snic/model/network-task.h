@@ -7,6 +7,9 @@
 #ifndef SNIC_NETWORK_TASK_H
 #define SNIC_NETWORK_TASK_H
 
+#include "ns3/packet.h"
+#include "ns3/pointer.h"
+
 namespace ns3
 {
 

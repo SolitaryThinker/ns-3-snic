@@ -85,6 +85,8 @@ class SnicHelper
     void AddPort(Ptr<NetDevice> snic, Ptr<NetDevice> dev);
     void ConnectTwoSnic(NetDeviceContainer snic1, NetDeviceContainer snic2);
 
+    void CreateAndAggregateObjectFromTypeId(Ptr<NetDevice> device, const std::string typeId);
+
   private:
     /**
      * \brief Enable pcap output the indicated net device.
