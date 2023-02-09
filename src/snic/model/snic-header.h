@@ -17,7 +17,7 @@
 namespace ns3
 {
 
-class SnicAppHeader : public Header
+class SnicHeader : public Header
 {
   public:
     SnicHeader();

@@ -4,7 +4,6 @@ build_lib(
     helper/bulk-send-helper.cc
     helper/on-off-helper.cc
     helper/packet-sink-helper.cc
-    helper/snic-echo-helper.cc
     helper/three-gpp-http-helper.cc
     helper/udp-client-server-helper.cc
     helper/udp-echo-helper.cc
@@ -16,8 +15,6 @@ build_lib(
     model/seq-ts-echo-header.cc
     model/seq-ts-header.cc
     model/seq-ts-size-header.cc
-    model/snic-echo-client.cc
-    model/snic-echo-server.cc
     model/three-gpp-http-client.cc
     model/three-gpp-http-header.cc
     model/three-gpp-http-server.cc
@@ -31,7 +28,6 @@ build_lib(
     helper/bulk-send-helper.h
     helper/on-off-helper.h
     helper/packet-sink-helper.h
-    helper/snic-echo-helper.h
     helper/three-gpp-http-helper.h
     helper/udp-client-server-helper.h
     helper/udp-echo-helper.h
@@ -43,8 +39,6 @@ build_lib(
     model/seq-ts-echo-header.h
     model/seq-ts-header.h
     model/seq-ts-size-header.h
-    model/snic-echo-client.h
-    model/snic-echo-server.h
     model/three-gpp-http-client.h
     model/three-gpp-http-header.h
     model/three-gpp-http-server.h
