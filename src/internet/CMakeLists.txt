@@ -15,6 +15,7 @@ set(source_files
     helper/neighbor-cache-helper.cc
     helper/rip-helper.cc
     helper/ripng-helper.cc
+    helper/snic-stack-helper.cc
     model/arp-cache.cc
     model/arp-header.cc
     model/arp-l3-protocol.cc
@@ -85,6 +86,11 @@ set(source_files
     model/ripng-header.cc
     model/ripng.cc
     model/rtt-estimator.cc
+    model/snic-l4-protocol.cc
+    model/snic-socket-factory-impl.cc
+    model/snic-socket-factory.cc
+    model/snic-socket-impl.cc
+    model/snic-socket.cc
     model/tcp-bbr.cc
     model/tcp-bic.cc
     model/tcp-congestion-ops.cc
@@ -147,6 +153,7 @@ set(header_files
     helper/neighbor-cache-helper.h
     helper/rip-helper.h
     helper/ripng-helper.h
+    helper/snic-stack-helper.h
     model/arp-cache.h
     model/arp-header.h
     model/arp-l3-protocol.h
@@ -211,6 +218,11 @@ set(header_files
     model/ripng-header.h
     model/ripng.h
     model/rtt-estimator.h
+    model/snic-l4-protocol.h
+    model/snic-socket-factory-impl.h
+    model/snic-socket-factory.h
+    model/snic-socket-impl.h
+    model/snic-socket.h
     model/tcp-bbr.h
     model/tcp-bic.h
     model/tcp-congestion-ops.h
