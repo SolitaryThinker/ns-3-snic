@@ -3,7 +3,7 @@
 #include "ns3/csma-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/network-module.h"
-#include "ns3/snic-helper.h"
+#include "ns3/snic-module.h"
 
 using namespace ns3;
 
@@ -63,7 +63,14 @@ main(int argc, char* argv[])
     Ptr<Node> switchNode = csmaSwitch.Get(0);
     SnicHelper swtch;
     NS_LOG_UNCOND("csma Simulator");
-    swtch.Install(switchNode, switchDevices);
+    NetDeviceContainer c = swtch.Install(switchNode, switchDevices);
+    Ptr<SnicNetDevice> snic = DynamicCast<SnicNetDevice, NetDevice>(c.Get(0));
+
+    Ptr<NetworkTaskAddN> ntAddN = Create<NetworkTaskAddN>();
+    ntAddN->SetIncrement(5);
+    snic->AddNT(DynamicCast<NetworkTask, NetworkTaskAddN>(ntAddN), 5);
+
+    // swtch.CreateAndAggregateObjectFromTypeId(snic, "ns3::NetworkTaskAddN");
 
     // Add internet stack to the terminals
     SnicStackHelper internet;

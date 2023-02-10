@@ -20,6 +20,7 @@
 #include "ns3/mac48-address.h"
 #include "ns3/node.h"
 #include "ns3/simulator.h"
+#include "ns3/snic-module.h"
 #include "ns3/string.h"
 #include "ns3/tcp-header.h"
 #include "ns3/udp-header.h"
@@ -83,6 +84,12 @@ class SnicNetDevice : public NetDevice
      * \return the n-th snic conected NetDevice
      */
     Ptr<NetDevice> GetSnicPort(uint32_t n) const;
+
+    void AddNT(Ptr<NetworkTask> nt, uint32_t id);
+    void RemoveNT(uint32_t id);
+    Ptr<NetworkTask> GetNT(uint32_t id);
+    uint32_t GetNumNT();
+
     // int GetSnicPortIndex(Ptr<SnicPort>
 
     // inherited from NetDevice base class
@@ -207,6 +214,8 @@ class SnicNetDevice : public NetDevice
   private:
     uint16_t m_num_hosts_connected;
     uint16_t m_num_ports;
+
+    std::map<uint32_t, Ptr<NetworkTask>> m_nts;
 
     /**
      * Add a flow.

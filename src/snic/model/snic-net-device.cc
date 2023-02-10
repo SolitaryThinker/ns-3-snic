@@ -6,6 +6,8 @@
 
 #include "snic-net-device.h"
 
+#include "network-task.h"
+
 #include "ns3/boolean.h"
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
@@ -150,8 +152,36 @@ SnicNetDevice::GetNSnicPorts() const
 Ptr<NetDevice>
 SnicNetDevice::GetSnicPort(uint32_t n) const
 {
-    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_FUNCTION(this << n);
     return m_ports[n];
+}
+
+void
+SnicNetDevice::AddNT(Ptr<NetworkTask> nt, uint32_t id)
+{
+    NS_LOG_FUNCTION(this << nt << id);
+    m_nts[id] = nt;
+}
+
+void
+SnicNetDevice::RemoveNT(uint32_t id)
+{
+    NS_LOG_FUNCTION(this << id);
+    m_nts.erase(id);
+}
+
+Ptr<NetworkTask>
+SnicNetDevice::GetNT(uint32_t id)
+{
+    NS_LOG_FUNCTION(this << id);
+    return m_nts[id];
+}
+
+uint32_t
+SnicNetDevice::GetNumNT()
+{
+    NS_LOG_FUNCTION_NOARGS();
+    return m_nts.size();
 }
 
 void
@@ -233,6 +263,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         {
             NS_LOG_DEBUG("packetType PACKET_OTHERHOST, our address ");
             // unwrap snic header
+            packet = ProcessPacket(incomingPort, packet, protocol, src, dst);
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
@@ -261,6 +292,8 @@ SnicNetDevice::ProcessPacket(Ptr<NetDevice> incomingPort,
                              Mac48Address src,
                              Mac48Address dst)
 {
+    // get nts
+    Ptr<NetworkTask> nt = this->GetObject<NetworkTask>();
     // parse
     // match
     // action

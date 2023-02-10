@@ -174,8 +174,8 @@ SnicHeader::GetInstanceTypeId() const
 void
 SnicHeader::Print(std::ostream& os) const
 {
-    os << "snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
-       << m_destinationPort;
+    os << "snic_nt: " << m_nt << ", snic_length: " << m_payloadSize + GetSerializedSize() << " "
+       << m_sourcePort << " > " << m_destinationPort;
 }
 
 uint32_t
