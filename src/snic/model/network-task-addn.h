@@ -18,7 +18,7 @@ class NetworkTaskAddN : public NetworkTask
     NetworkTaskAddN();
     ~NetworkTaskAddN();
 
-    void ProcessPacket(Ptr<Packet> packet) override;
+    void ProcessHeader(SnicHeader& header) override;
     void SetIncrement(uint32_t increment);
     uint32_t GetIncrement();
 

@@ -163,11 +163,11 @@ class SnicNetDevice : public NetDevice
      * \param src the packet source
      * \param dst the packet destination
      */
-    void ProcessPacket(Ptr<NetDevice> incomingPort,
-                       Ptr<const Packet> packet,
-                       uint16_t protocol,
-                       Mac48Address src,
-                       Mac48Address dst);
+    Ptr<Packet> ProcessPacket(Ptr<NetDevice> incomingPort,
+                              Ptr<const Packet> packet,
+                              uint16_t protocol,
+                              const Address& src,
+                              const Address& dst);
 
     /**
      * \brief Forwards a unicast packet

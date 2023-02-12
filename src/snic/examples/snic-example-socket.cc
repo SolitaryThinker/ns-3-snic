@@ -17,8 +17,10 @@ main(int argc, char* argv[])
 
     // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
-    LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
-    // Ipv4L3Protocol
+    LogComponentEnable("SnicHeader", LOG_LEVEL_LOGIC);
+    LogComponentEnable("NetworkTaskAddN", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
+    //  Ipv4L3Protocol
     LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("NetworkTaskAddN", LOG_LEVEL_LOGIC);

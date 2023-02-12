@@ -329,12 +329,14 @@ SnicEchoClient::Send()
     }
     NS_LOG_INFO("adding snic header in client");
     SnicHeader header;
+    uint8_t buffer[8];
+    *(int64_t*)buffer = 2;
     header.AddNT(5);
+    NS_LOG_INFO("adding buffer to snic header as payload" << buffer);
+    NS_LOG_INFO("adding buffer to snic header as payload" << *(int64_t*)buffer);
+    header.SetPayload(buffer, 8);
     p->AddHeader(header);
     NS_LOG_INFO("after adding snic header in client" << header.GetNT());
-    SnicHeader newheader;
-    p->PeekHeader(newheader);
-    NS_LOG_INFO("after adding snic header in client" << newheader.GetNT());
     Address localAddress;
     m_socket->GetSockName(localAddress);
     // call to the trace sinks before the packet is actually sent,

@@ -19,14 +19,16 @@ NetworkTaskAddN::~NetworkTaskAddN()
 }
 
 void
-NetworkTaskAddN::ProcessPacket(Ptr<Packet> packet)
+NetworkTaskAddN::ProcessHeader(SnicHeader& header)
 {
-    // uint32_t size = packet->GetSerializedSize();
+    NS_LOG_FUNCTION_NOARGS();
+    // uint32_t size = header->GetSerializedSize();
     uint8_t buffer[8];
 
-    packet->CopyData((uint8_t*)&buffer, 8);
+    header.CopyPayload(buffer, 8);
+    *(int64_t*)buffer += m_increment;
     NS_LOG_INFO("buffer: " << buffer);
-    buffer[7] += m_increment;
+    header.SetPayload(buffer, 8);
 }
 
 void

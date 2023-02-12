@@ -54,7 +54,7 @@ class SnicL4Protocol : public IpL4Protocol
      * \return the object TypeId
      */
     static TypeId GetTypeId();
-    static const uint8_t PROT_NUMBER; //!< protocol number (0x11)
+    static const uint16_t PROT_NUMBER; //!< protocol number (145)
 
     SnicL4Protocol();
     ~SnicL4Protocol() override;

@@ -9,6 +9,7 @@
 
 #include "ns3/packet.h"
 #include "ns3/pointer.h"
+#include "ns3/snic-header.h"
 
 namespace ns3
 {
@@ -19,7 +20,7 @@ class NetworkTask : public Object
     NetworkTask();
     ~NetworkTask();
 
-    virtual void ProcessPacket(Ptr<Packet> packet) = 0;
+    virtual void ProcessHeader(SnicHeader& header) = 0;
     // private:
 };
 

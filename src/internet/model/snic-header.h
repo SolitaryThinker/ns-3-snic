@@ -28,6 +28,10 @@ class SnicHeader : public Header
     /* returns 0 if no NT */
     uint64_t GetNT();
 
+    // XXX
+    void SetPayload(uint8_t* buffer, size_t size);
+    void CopyPayload(uint8_t* buffer, size_t size);
+
     /**
      * \brief Enable checksum calculation for SNIC
      */
@@ -151,6 +155,7 @@ class SnicHeader : public Header
     uint16_t m_sourcePort;      //!< Source port
     uint16_t m_destinationPort; //!< Destination port
     uint16_t m_nt;
+    int64_t m_payload;
     uint16_t m_payloadSize;     //!< Payload size
 
     Address m_source;      //!< Source IP address

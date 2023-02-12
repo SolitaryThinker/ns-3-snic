@@ -9,15 +9,17 @@
 #include "network-task.h"
 
 #include "ns3/boolean.h"
+#include "ns3/ipv4-l3-protocol.h"
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
 #include "ns3/pointer.h"
 #include "ns3/simulator.h"
 #include "ns3/snic-header.h"
+#include "ns3/snic-l4-protocol.h"
 #include "ns3/trace-source-accessor.h"
 #include "ns3/uinteger.h"
 
-    namespace ns3
+namespace ns3
 {
 NS_LOG_COMPONENT_DEFINE("SnicNetDevice");
 
@@ -208,7 +210,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
                                  PacketType packetType)
 {
     Packet::EnablePrinting();
-    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_FUNCTION(this << protocol);
     NS_LOG_DEBUG("UID is " << packet->GetUid());
     NS_LOG_DEBUG("id is " << m_node->GetId());
 
@@ -263,7 +265,6 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         {
             NS_LOG_DEBUG("packetType PACKET_OTHERHOST, our address ");
             // unwrap snic header
-            packet = ProcessPacket(incomingPort, packet, protocol, src, dst);
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
@@ -271,6 +272,8 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         {
             NS_LOG_DEBUG("packetType PACKET_OTHERHOST, NOT our address ");
             // wrap snic header
+            if (protocol == SnicL4Protocol::PROT_NUMBER)
+                packet = ProcessPacket(incomingPort, packet, protocol, src, dst);
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
         }
         break;
@@ -285,15 +288,33 @@ SnicNetDevice::Receive(Ptr<Packet> p, Ptr<SnicNetDevice> sender)
     NS_LOG_UNCOND("==========Receieved from peer Snic=======");
 }
 
-void
+Ptr<Packet>
 SnicNetDevice::ProcessPacket(Ptr<NetDevice> incomingPort,
                              Ptr<const Packet> packet,
                              uint16_t protocol,
-                             Mac48Address src,
-                             Mac48Address dst)
+                             const Address& src,
+                             const Address& dst)
 {
-    // get nts
-    Ptr<NetworkTask> nt = this->GetObject<NetworkTask>();
+    NS_LOG_FUNCTION(this);
+    Ptr<Packet> pktCopy = packet->Copy();
+
+    Ipv4Header ipv4Header;
+    // strip ipv4 header
+    pktCopy->RemoveHeader(ipv4Header);
+
+    SnicHeader snicHeader;
+    // strip snic header
+    pktCopy->RemoveHeader(snicHeader);
+
+    // process snic header
+    // TODO check for valid nt id
+    m_nts[snicHeader.GetNT()]->ProcessHeader(snicHeader);
+
+    // add snic header
+    pktCopy->AddHeader(snicHeader);
+    // add ipv4 header
+    pktCopy->AddHeader(ipv4Header);
+
     // parse
     // match
     // action
@@ -301,6 +322,7 @@ SnicNetDevice::ProcessPacket(Ptr<NetDevice> incomingPort,
     // figure out what NT/ protocols are needed
     // if we need to offload
     // how to route
+    return pktCopy;
 }
 
 void

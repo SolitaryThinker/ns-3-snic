@@ -23,6 +23,7 @@ SnicHeader::SnicHeader()
     : m_sourcePort(0xfffd),
       m_destinationPort(0xfffd),
       m_nt(0),
+      m_payload(-1),
       m_payloadSize(0),
       m_checksum(0),
       m_calcChecksum(false),
@@ -40,6 +41,7 @@ SnicHeader::~SnicHeader()
 void
 SnicHeader::AddNT(uint64_t nt)
 {
+    NS_LOG_FUNCTION(this << nt);
     m_nt = nt;
 }
 
@@ -47,6 +49,21 @@ uint64_t
 SnicHeader::GetNT()
 {
     return m_nt;
+}
+
+void
+SnicHeader::SetPayload(uint8_t* buffer, size_t size)
+{
+    NS_LOG_FUNCTION(this << *(int64_t*)buffer << size);
+    // check size is at least 8 bytes
+    m_payload = *((int64_t*)buffer);
+}
+
+void
+SnicHeader::CopyPayload(uint8_t* buffer, size_t size)
+{
+    // check size is at least 8 bytes
+    *((int64_t*)buffer) = m_payload;
 }
 
 void
@@ -174,14 +191,15 @@ SnicHeader::GetInstanceTypeId() const
 void
 SnicHeader::Print(std::ostream& os) const
 {
-    os << "snic_nt: " << m_nt << ", snic_length: " << m_payloadSize + GetSerializedSize() << " "
-       << m_sourcePort << " > " << m_destinationPort;
+    os << "snic_nt: " << m_nt << ", payload: " << m_payload
+       << ", snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
+       << m_destinationPort;
 }
 
 uint32_t
 SnicHeader::GetSerializedSize() const
 {
-    return 8;
+    return 18;
 }
 
 void
@@ -192,6 +210,7 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     i.WriteHtonU16(m_sourcePort);
     i.WriteHtonU16(m_destinationPort);
     i.WriteHtonU16(m_nt);
+    i.WriteHtonU64(m_payload);
     if (m_payloadSize == 0)
     {
         i.WriteHtonU16(start.GetSize());
@@ -229,6 +248,7 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     m_sourcePort = i.ReadNtohU16();
     m_destinationPort = i.ReadNtohU16();
     m_nt = i.ReadNtohU16();
+    m_payload = i.ReadNtohU64();
     m_payloadSize = i.ReadNtohU16() - GetSerializedSize();
     m_checksum = i.ReadU16();
 

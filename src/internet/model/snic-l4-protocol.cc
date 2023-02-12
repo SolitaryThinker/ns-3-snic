@@ -35,7 +35,7 @@ NS_LOG_COMPONENT_DEFINE("SnicL4Protocol");
 NS_OBJECT_ENSURE_REGISTERED(SnicL4Protocol);
 
 /* see http://www.iana.org/assignments/protocol-numbers */
-const uint8_t SnicL4Protocol::PROT_NUMBER = 17;
+const uint16_t SnicL4Protocol::PROT_NUMBER = 145;
 
 TypeId
 SnicL4Protocol::GetTypeId()
