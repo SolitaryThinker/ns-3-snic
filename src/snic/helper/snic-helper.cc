@@ -217,10 +217,10 @@ NetDeviceContainer
 SnicHelper::Install(Ptr<Node> node, NetDeviceContainer c)
 {
   NS_LOG_FUNCTION_NOARGS();
-  NS_LOG_LOGIC("**** Install SNIC device on node " << node->GetId());
 
   NetDeviceContainer devs;
   Ptr<SnicNetDevice> dev = m_deviceFactory.Create<SnicNetDevice>();
+  NS_LOG_LOGIC("**** Install SNIC device " << dev << " on node " << node->GetId());
   devs.Add(dev);
   node->AddDevice(dev);
 
@@ -247,7 +247,7 @@ SnicHelper::AddPort(Ptr<NetDevice> snic, Ptr<NetDevice> dev)
 {
     NS_LOG_FUNCTION_NOARGS();
     NS_LOG_LOGIC("**** add port on already created Snic device");
-    DynamicCast<SnicNetDevice, NetDevice>(snic)->AddSnicPort(dev);
+    DynamicCast<SnicNetDevice, NetDevice>(snic)->AddSnicPort(dev, true);
 }
 
 void

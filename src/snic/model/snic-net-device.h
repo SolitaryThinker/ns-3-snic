@@ -68,6 +68,7 @@ class SnicNetDevice : public NetDevice
      * never on its port netdevices. XXX
      */
     void AddSnicPort(Ptr<NetDevice> snicPort);
+    void AddSnicPort(Ptr<NetDevice> snicPort, bool isPeerSnic);
     // void AddPeerSnic(Ptr<SnicNetDevice> peerSnic, Ptr<SnicChannel> ch);
 
     /**
@@ -89,6 +90,14 @@ class SnicNetDevice : public NetDevice
     void RemoveNT(uint32_t id);
     Ptr<NetworkTask> GetNT(uint32_t id);
     uint32_t GetNumNT();
+
+    void RequestAllocation(Ptr<const Packet> packet, uint16_t protocol);
+
+    void SetSchedulerAddress(Ipv4Address schedulerAddress);
+    Ipv4Address GetSchedulerAddress() const;
+
+    void SetIsScheduler(bool isScheduler);
+    bool IsScheduler() const;
 
     // int GetSnicPortIndex(Ptr<SnicPort>
 
@@ -149,7 +158,7 @@ class SnicNetDevice : public NetDevice
      * \param packetType Type of the packet.
      */
     void ReceiveFromDevice(Ptr<NetDevice> netdev,
-                           Ptr<const Packet> packet,
+                           Ptr<Packet> packet,
                            uint16_t protocol,
                            const Address& src,
                            const Address& dst,
@@ -476,6 +485,12 @@ class SnicNetDevice : public NetDevice
     // PacketData_t m_packetData; ///< Packet data
 
     Ptr<Packet> m_currentPkt; //!< Current packet processed
+    bool m_isScheduler;
+    Ipv4Address m_schedulerAddress;
+    std::vector<Address> m_connectedHosts;
+    std::vector<Address> m_connectedSnics;
+
+    PacketBuffer m_packetBuffer;
   };
 }
 #endif // SNIC_NET_DEVICE_H

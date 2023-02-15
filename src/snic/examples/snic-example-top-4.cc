@@ -4,6 +4,7 @@
 #include "ns3/internet-module.h"
 #include "ns3/network-module.h"
 #include "ns3/snic-helper.h"
+#include "ns3/snic-net-device.h"
 
 using namespace ns3;
 
@@ -54,8 +55,15 @@ main(int argc, char* argv[])
     bool verbose = true;
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
-    //  LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
+    //  LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
+    //  LogComponentEnable("Node", LOG_LEVEL_LOGIC);
+    LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicStackHelper", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
+    //  LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
+    LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
+    //   LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("SnicEchoServerApplication", LOG_LEVEL_INFO);
@@ -91,10 +99,11 @@ main(int argc, char* argv[])
     NS_LOG_INFO("Creating first sNIC cluster.");
 
     CreateSnic(snics, 4, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
-
-
-    // second sNIC cluster
     NS_LOG_INFO("Creating second sNIC cluster.");
+    CreateSnic(snics, 4, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
+    NS_LOG_INFO("Creating 3rd sNIC cluster.");
+    CreateSnic(snics, 4, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
+    NS_LOG_INFO("Creating 4th sNIC cluster.");
     CreateSnic(snics, 4, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
 
     // connect two snics together
@@ -104,10 +113,13 @@ main(int argc, char* argv[])
     // swtch2.Install(switchNode2, snicLink.Get(1));
     snicHelper.AddPort(snics.Get(0), snicLink.Get(0));
     snicHelper.AddPort(snics.Get(1), snicLink.Get(1));
+    snicHelper.AddPort(snics.Get(2), snicLink.Get(2));
+    snicHelper.AddPort(snics.Get(3), snicLink.Get(3));
 
     // Add internet stack to the terminals
     SnicStackHelper internet;
     internet.Install(terminals);
+    internet.Install(csmaSwitches);
 
     // We've got the "hardware" in place.  Now we need to add IP addresses.
     //
@@ -115,6 +127,18 @@ main(int argc, char* argv[])
     Ipv4AddressHelper ipv4;
     ipv4.SetBase("10.1.1.0", "255.255.255.0");
     Ipv4InterfaceContainer interfaces = ipv4.Assign(terminalDevices);
+    // NS_LOG_INFO("snics helper: " << snics);
+    Ipv4InterfaceContainer snic_interfaces = ipv4.Assign(snics);
+
+    // XXX set 4th snic to be scheduler manually
+    for (NetDeviceContainer::Iterator i = snics.Begin(); i != snics.End(); ++i)
+    {
+        NS_LOG_LOGIC("snic_ptr " << *i);
+        NS_LOG_LOGIC("addresses ");
+        Ptr<SnicNetDevice> snic = DynamicCast<SnicNetDevice, NetDevice>(*i);
+        snic->SetSchedulerAddress(snic_interfaces.GetAddress(3));
+    }
+    DynamicCast<SnicNetDevice, NetDevice>(snics.Get(3))->SetIsScheduler(true);
 
     NS_LOG_INFO("Create Applications.");
     // uint16_t port = 9; // Discard port (RFC 863)
@@ -131,7 +155,7 @@ main(int argc, char* argv[])
     echoClient2.SetAttribute("PacketSize", UintegerValue(1024));
 
     // ApplicationContainer clientApps = echoClient2.Install(terminals.Get(2));
-    ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(6));
+    ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(14));
     clientApps2.Start(Seconds(2.0));
     clientApps2.Stop(Seconds(10.0));
     //   clientApps.Start(Seconds(2.0));

@@ -60,7 +60,8 @@ SnicNetDevice::GetTypeId()
 SnicNetDevice::SnicNetDevice()
     : m_node(nullptr),
       m_ifIndex(0),
-      m_mtu(0xffff)
+      m_mtu(0xffff),
+      m_isScheduler(false)
 {
     NS_LOG_FUNCTION_NOARGS();
     m_channel = CreateObject<BridgeChannel>();
@@ -75,6 +76,12 @@ SnicNetDevice::~SnicNetDevice()
 
 void
 SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
+{
+    AddSnicPort(snicPort, false);
+}
+
+void
+SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort, bool isPeerSnic)
 {
     NS_LOG_FUNCTION_NOARGS();
     NS_ASSERT(snicPort != this);
@@ -92,6 +99,10 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
     {
         m_address = Mac48Address::ConvertFrom(snicPort->GetAddress());
     }
+    if (isPeerSnic)
+        m_connectedSnics.push_back(snicPort->GetAddress());
+    else
+        m_connectedHosts.push_back(snicPort->GetAddress());
 
     NS_LOG_DEBUG("RegisterProtocolHandler for " << snicPort->GetInstanceTypeId().GetName());
     m_node->RegisterProtocolHandler(MakeCallback(&SnicNetDevice::ReceiveFromDevice, this),
@@ -187,6 +198,61 @@ SnicNetDevice::GetNumNT()
 }
 
 void
+SnicNetDevice::RequestAllocation(Ptr<const Packet> packet, uint16_t protocol)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    Ptr<Packet> copy = packet->Copy();
+
+    Ptr<Packet> request = Create<Packet>();
+    Ipv4Header ipv4Header;
+    SnicHeader snicHeader;
+    copy->RemoveHeader(ipv4Header);
+    copy->RemoveHeader(snicHeader);
+
+    ipv4Header.SetDestination(m_schedulerAddress);
+    ipv4Header.SetSource(m_schedulerAddress);
+
+    snicHeader.SetPacketType(1);
+
+    request->AddHeader(snicHeader);
+    request->AddHeader(ipv4Header);
+    // create new flow to track packets
+    PacketBuffer::FlowId flowId = PacketBuffer::FlowId(snicHeader);
+    // make the flow known to the packet cache
+    PacketBuffer::Entry* entry = m_packetBuffer.Add(flowId);
+    entry->MarkWaitReply(packet);
+    // newentry = flowid;
+    // m_packetBuffer.EnqueuePending(flowid, packet);
+    // m_packetBuffer.EnqueuePending(flowid, packet);
+    m_rxCallback(this, request, protocol, m_address);
+}
+
+void
+SnicNetDevice::SetSchedulerAddress(Ipv4Address schedulerAddress)
+{
+    NS_LOG_FUNCTION(this << schedulerAddress);
+    m_schedulerAddress = schedulerAddress;
+}
+
+Ipv4Address
+SnicNetDevice::GetSchedulerAddress() const
+{
+    return m_schedulerAddress;
+}
+
+void
+SnicNetDevice::SetIsScheduler(bool isScheduler)
+{
+    m_isScheduler = isScheduler;
+}
+
+bool
+SnicNetDevice::IsScheduler() const
+{
+    return m_isScheduler;
+}
+
+void
 SnicNetDevice::DoDispose()
 {
     NS_LOG_FUNCTION(this);
@@ -203,14 +269,14 @@ SnicNetDevice::DoDispose()
 
 void
 SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
-                                 Ptr<const Packet> packet,
+                                 Ptr<Packet> packet,
                                  uint16_t protocol,
                                  const Address& src,
                                  const Address& dst,
                                  PacketType packetType)
 {
     Packet::EnablePrinting();
-    NS_LOG_FUNCTION(this << protocol);
+    NS_LOG_FUNCTION(this << incomingPort << protocol);
     NS_LOG_DEBUG("UID is " << packet->GetUid());
     NS_LOG_DEBUG("id is " << m_node->GetId());
 
@@ -255,6 +321,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     case PACKET_BROADCAST:
     case PACKET_MULTICAST:
         NS_LOG_DEBUG("packetType PACKET_MULTICAST ");
+        // if (protocol != ArpL3Protocol::PROT_NUMBER)
         m_rxCallback(this, packet, protocol, src);
         // warp snic header
         ForwardBroadcast(incomingPort, packet, protocol, src48, dst48);
@@ -263,14 +330,55 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     case PACKET_OTHERHOST:
         if (dst48 == m_address)
         {
-            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, our address ");
+            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, match our address ");
             // unwrap snic header
             Learn(src48, incomingPort);
             m_rxCallback(this, packet, protocol, src);
         }
         else
         {
-            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, NOT our address ");
+            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, not our address ");
+            if (protocol == Ipv4L3Protocol::PROT_NUMBER)
+            {
+                Ipv4Header ipv4Header;
+                packet->RemoveHeader(ipv4Header);
+                SnicHeader snicHeader;
+                packet->RemoveHeader(snicHeader);
+                NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
+                NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
+
+                // need to request allocation from leader
+                if (!IsScheduler() && !snicHeader.HasSeenNic() && snicHeader.GetPacketType() == 0)
+                {
+                    snicHeader.SetHasSeenNic();
+                    packet->AddHeader(snicHeader);
+                    packet->AddHeader(ipv4Header);
+                    RequestAllocation(packet, protocol);
+                    packet->RemoveHeader(ipv4Header);
+                    packet->RemoveHeader(snicHeader);
+                }
+
+                packet->AddHeader(snicHeader);
+                packet->AddHeader(ipv4Header);
+            }
+            NS_LOG_DEBUG("\tsrc ipaddress: " << src);
+            NS_LOG_DEBUG("\tsrc: " << src);
+            NS_LOG_DEBUG("\tdst: "
+                         << " " << dst);
+            for (uint64_t i = 0; i < m_connectedHosts.size(); i++)
+            {
+                NS_LOG_DEBUG("connectedHost " << i << ": " << m_connectedHosts[i]);
+                if (src == m_connectedHosts[i])
+                    NS_LOG_DEBUG("from our host");
+            }
+            for (uint64_t i = 0; i < m_connectedSnics.size(); i++)
+            {
+                NS_LOG_DEBUG("connectedSnics " << i << ": " << m_connectedSnics[i]);
+            }
+            for (uint32_t i = 0; i < m_node->GetNDevices(); i++)
+            {
+                NS_LOG_DEBUG("device " << i << ": " << m_node->GetDevice(i)->GetAddress());
+            }
             // wrap snic header
             if (protocol == SnicL4Protocol::PROT_NUMBER)
                 packet = ProcessPacket(incomingPort, packet, protocol, src, dst);
@@ -597,7 +705,7 @@ bool
 SnicNetDevice::NeedsArp() const
 {
     NS_LOG_FUNCTION(this);
-    return false;
+    return true;
 }
 
 void

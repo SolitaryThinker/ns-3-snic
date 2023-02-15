@@ -30,7 +30,13 @@ class SnicHeader : public Header
 
     // XXX
     void SetPayload(uint8_t* buffer, size_t size);
-    void CopyPayload(uint8_t* buffer, size_t size);
+    void CopyPayload(uint8_t* buffer, size_t size) const;
+
+    bool HasSeenNic() const;
+    void SetHasSeenNic();
+
+    uint16_t GetPacketType() const;
+    void SetPacketType(uint16_t packetType);
 
     /**
      * \brief Enable checksum calculation for SNIC
@@ -52,6 +58,13 @@ class SnicHeader : public Header
      * \return the destination port for this SnicHeader
      */
     uint16_t GetDestinationPort() const;
+
+    void SetSourceIp(Address ip);
+    void SetDestinationIp(Address ip);
+    Address GetSourceIp() const;
+    Address GetDestinationIp() const;
+    void SetProtocol(uint8_t protocol);
+    uint8_t GetProtocol() const;
 
     /**
      * \param source the ip source to use in the underlying
@@ -156,6 +169,8 @@ class SnicHeader : public Header
     uint16_t m_destinationPort; //!< Destination port
     uint16_t m_nt;
     int64_t m_payload;
+    bool m_hasSeenNic;
+    uint16_t m_packetType; // anything other than 0 means this packet is internal to snic cluster
     uint16_t m_payloadSize;     //!< Payload size
 
     Address m_source;      //!< Source IP address

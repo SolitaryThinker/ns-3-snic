@@ -24,6 +24,8 @@ SnicHeader::SnicHeader()
       m_destinationPort(0xfffd),
       m_nt(0),
       m_payload(-1),
+      m_hasSeenNic(false),
+      m_packetType(0),
       m_payloadSize(0),
       m_checksum(0),
       m_calcChecksum(false),
@@ -60,10 +62,34 @@ SnicHeader::SetPayload(uint8_t* buffer, size_t size)
 }
 
 void
-SnicHeader::CopyPayload(uint8_t* buffer, size_t size)
+SnicHeader::CopyPayload(uint8_t* buffer, size_t size) const
 {
     // check size is at least 8 bytes
     *((int64_t*)buffer) = m_payload;
+}
+
+bool
+SnicHeader::HasSeenNic() const
+{
+    return m_hasSeenNic;
+}
+
+void
+SnicHeader::SetHasSeenNic()
+{
+    m_hasSeenNic = true;
+}
+
+uint16_t
+SnicHeader::GetPacketType() const
+{
+    return m_packetType;
+}
+
+void
+SnicHeader::SetPacketType(uint16_t packetType)
+{
+    m_packetType = packetType;
 }
 
 void
@@ -94,6 +120,42 @@ uint16_t
 SnicHeader::GetDestinationPort() const
 {
     return m_destinationPort;
+}
+
+void
+SnicHeader::SetSourceIp(Address ip)
+{
+    m_source = ip;
+}
+
+void
+SnicHeader::SetDestinationIp(Address ip)
+{
+    m_destination = ip;
+}
+
+Address
+SnicHeader::GetSourceIp() const
+{
+    return m_source;
+}
+
+Address
+SnicHeader::GetDestinationIp() const
+{
+    return m_destination;
+}
+
+void
+SnicHeader::SetProtocol(uint8_t protocol)
+{
+    m_protocol = protocol;
+}
+
+uint8_t
+SnicHeader::GetProtocol() const
+{
+    return m_protocol;
 }
 
 void
@@ -191,15 +253,15 @@ SnicHeader::GetInstanceTypeId() const
 void
 SnicHeader::Print(std::ostream& os) const
 {
-    os << "snic_nt: " << m_nt << ", payload: " << m_payload
-       << ", snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
-       << m_destinationPort;
+    os << "packetType: " << m_packetType << " seenSnic: " << m_hasSeenNic << " snic_nt: " << m_nt
+       << ", payload: " << m_payload << ", snic_length: " << m_payloadSize + GetSerializedSize()
+       << " " << m_sourcePort << " > " << m_destinationPort;
 }
 
 uint32_t
 SnicHeader::GetSerializedSize() const
 {
-    return 18;
+    return 21;
 }
 
 void
@@ -211,6 +273,8 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     i.WriteHtonU16(m_destinationPort);
     i.WriteHtonU16(m_nt);
     i.WriteHtonU64(m_payload);
+    i.WriteU8(m_hasSeenNic);
+    i.WriteHtonU16(m_packetType);
     if (m_payloadSize == 0)
     {
         i.WriteHtonU16(start.GetSize());
@@ -249,6 +313,8 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     m_destinationPort = i.ReadNtohU16();
     m_nt = i.ReadNtohU16();
     m_payload = i.ReadNtohU64();
+    m_hasSeenNic = i.ReadU8();
+    m_packetType = i.ReadNtohU16();
     m_payloadSize = i.ReadNtohU16() - GetSerializedSize();
     m_checksum = i.ReadU16();
 
