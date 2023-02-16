@@ -1,3 +1,15 @@
+#include "packet-buffer.h"
+
+#include "ns3/address.h"
+#include "ns3/assert.h"
+#include "ns3/log.h"
+#include "ns3/names.h"
+#include "ns3/node.h"
+#include "ns3/packet.h"
+#include "ns3/simulator.h"
+#include "ns3/trace-source-accessor.h"
+#include "ns3/uinteger.h"
+
 namespace ns3
 {
 NS_LOG_COMPONENT_DEFINE("PacketBuffer");
@@ -16,7 +28,7 @@ PacketBuffer::GetTypeId()
                                           "entries in WaitReply state will resend ArpRequest "
                                           "unless MaxRetries has been exceeded, "
                                           "in which case the entry is marked dead",
-                                          TimeValue(Seconds(1)),
+                                          TimeValue(Seconds(5)),
                                           MakeTimeAccessor(&PacketBuffer::m_waitReplyTimeout),
                                           MakeTimeChecker())
                             .AddAttribute("MaxRetries",
@@ -29,7 +41,8 @@ PacketBuffer::GetTypeId()
                                           "The size of the queue for packets pending an arp reply.",
                                           UintegerValue(3),
                                           MakeUintegerAccessor(&PacketBuffer::m_pendingQueueSize),
-                                          MakeUintegerChecker<uint32_t>()) return tid;
+                                          MakeUintegerChecker<uint32_t>());
+    return tid;
 }
 
 PacketBuffer::PacketBuffer()
@@ -97,10 +110,22 @@ PacketBuffer::StartWaitReplyTimer()
     }
 }
 
+PacketBuffer::Entry*
+PacketBuffer::Add(const FlowId& flowId)
+{
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT(m_packetBuffer.find(flowId) == m_packetBuffer.end());
+
+    PacketBuffer::Entry* entry = new PacketBuffer::Entry(this);
+    m_packetBuffer[flowId] = entry;
+    return entry;
+}
+
 void
 PacketBuffer::HandleWaitReplyTimeout()
 {
     NS_LOG_FUNCTION(this);
+    NS_FATAL_ERROR("packet buffer timeout");
     /*
     PacketBuffer::Entry* entry;
     bool restartWaitReplyTimer = false;
@@ -152,21 +177,22 @@ PacketBuffer::Entry::Entry(PacketBuffer* buffer)
       m_state(WAIT_REPLY),
       m_retries(0)
 {
-    NS_LOG_FUNCTION(this << arp);
+    NS_LOG_FUNCTION(this << buffer);
 }
 
 void
 PacketBuffer::Entry::MarkWaitReply(Ptr<const Packet> packet)
 {
+    NS_LOG_FUNCTION(this << packet);
     // NS_LOG_FUNCTION(this << waiting.first);
     //  NS_ASSERT(m_state == ALIVE || m_state == DEAD);
     NS_ASSERT(m_pending.empty());
     // NS_ASSERT_MSG(waiting.first, "Can not add a null packet to the ARP queue");
 
     m_state = WAIT_REPLY;
-    m_pending.push_back(waiting);
+    m_pending.push_back(packet);
     // UpdateSeen();
-    m_arp->StartWaitReplyTimer();
+    m_packetBuffer->StartWaitReplyTimer();
 }
 
 bool
@@ -197,9 +223,9 @@ PacketBuffer::Entry::IsExpired() const
     return (m_state == EXPIRED);
 }
 
-PacketBuffer::FlowId::FlowId(Ipv4Address srcIp,
+PacketBuffer::FlowId::FlowId(Address srcIp,
                              uint16_t srcPort,
-                             Ipv4Address dstIp,
+                             Address dstIp,
                              uint16_t dstPort,
                              uint16_t protocol)
     : m_srcIp(srcIp),

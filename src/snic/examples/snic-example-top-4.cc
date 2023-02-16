@@ -55,6 +55,7 @@ main(int argc, char* argv[])
     bool verbose = true;
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
+    LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("Node", LOG_LEVEL_LOGIC);
@@ -136,9 +137,10 @@ main(int argc, char* argv[])
         NS_LOG_LOGIC("snic_ptr " << *i);
         NS_LOG_LOGIC("addresses ");
         Ptr<SnicNetDevice> snic = DynamicCast<SnicNetDevice, NetDevice>(*i);
-        snic->SetSchedulerAddress(snic_interfaces.GetAddress(3));
+        snic->SetSchedulerAddress(snic_interfaces.GetAddress(0));
+        snic->SetIpAddress(snic_interfaces.GetAddress(i - snics.Begin()));
     }
-    DynamicCast<SnicNetDevice, NetDevice>(snics.Get(3))->SetIsScheduler(true);
+    DynamicCast<SnicNetDevice, NetDevice>(snics.Get(0))->SetIsScheduler(true);
 
     NS_LOG_INFO("Create Applications.");
     // uint16_t port = 9; // Discard port (RFC 863)

@@ -157,6 +157,13 @@ class SnicHeader : public Header
      */
     uint16_t GetChecksum();
 
+    enum SnicPacketType_e
+    {
+        L4_PACKET = 0,
+        ALLOCATION_REQUEST = 1,
+        ALLOCATION_RESPONSE = 2
+    };
+
   private:
     bool m_isOffloaded;
     /**

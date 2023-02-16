@@ -98,6 +98,8 @@ class SnicNetDevice : public NetDevice
 
     void SetIsScheduler(bool isScheduler);
     bool IsScheduler() const;
+    void SetIpAddress(Ipv4Address address);
+    Ipv4Address GetIpAddress() const;
 
     // int GetSnicPortIndex(Ptr<SnicPort>
 
@@ -457,6 +459,7 @@ class SnicNetDevice : public NetDevice
     std::map<Mac48Address, LearnedState> m_learnState;   //!< Container for known address statuses
     Ptr<Node> m_node;                                    //!< Node owning this NetDevice
     Mac48Address m_address;                              //!< Mac48Address of this NetDevice
+    Ipv4Address m_ipAddress;                             //!< Mac48Address of this NetDevice
     Time m_expirationTime; //!< time it takes for learned MAC state to expire
                            //
     Ptr<BridgeChannel> m_channel;                        //!< virtual bridged channel
