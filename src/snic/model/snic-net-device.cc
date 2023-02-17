@@ -220,7 +220,9 @@ SnicNetDevice::RequestAllocation(Ptr<const Packet> packet, uint16_t protocol)
     PacketBuffer::FlowId flowId = PacketBuffer::FlowId(snicHeader);
     // make the flow known to the packet cache
     PacketBuffer::Entry* entry = m_packetBuffer.Add(flowId);
-    // entry->MarkWaitReply(packet);
+    m_packetBuffer.SetWaitReplyTimeout(Seconds(5));
+    entry->MarkWaitReply();
+    entry->EnqueuePending(packet);
     //  newentry = flowid;
     //  m_packetBuffer.EnqueuePending(flowid, packet);
     //  m_packetBuffer.EnqueuePending(flowid, packet);
@@ -278,6 +280,147 @@ SnicNetDevice::DoDispose()
     m_channel = nullptr;
     m_currentPkt = nullptr;
     NetDevice::DoDispose();
+}
+
+void
+SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
+                                Ptr<Packet> packet,
+                                uint16_t protocol,
+                                const Address& src,
+                                const Address& dst)
+{
+    NS_LOG_FUNCTION(this << incomingPort << protocol);
+
+    Mac48Address src48 = Mac48Address::ConvertFrom(src);
+    Mac48Address dst48 = Mac48Address::ConvertFrom(dst);
+    bool addressedToUs = (dst48 == m_address);
+
+    Ipv4Header ipv4Header;
+    SnicHeader snicHeader;
+    packet->RemoveHeader(ipv4Header);
+    packet->RemoveHeader(snicHeader);
+    NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
+    NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
+
+    switch (snicHeader.GetPacketType())
+    {
+    case SnicHeader::L4_PACKET: {
+        if (addressedToUs)
+        {
+            NS_FATAL_ERROR("l4 packets shouldn't be addressed to snics");
+        }
+        else
+        {
+            if (snicHeader.HasSeenNic())
+            {
+                NS_LOG_DEBUG("FOWARDING");
+
+                packet->AddHeader(snicHeader);
+                packet->AddHeader(ipv4Header);
+                ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+                return;
+            }
+            snicHeader.SetHasSeenNic();
+            if (IsScheduler())
+            {
+                NS_LOG_DEBUG("sched without alloc request NOW============");
+                // ForwardBroadcast(
+                // scheduler
+            }
+            else
+            {
+                NS_LOG_DEBUG("req sched ============");
+                packet->AddHeader(snicHeader);
+                packet->AddHeader(ipv4Header);
+                RequestAllocation(packet, protocol);
+                return;
+            }
+        }
+        break;
+    }
+    case SnicHeader::ALLOCATION_REQUEST: {
+        // if the packet is an allocation request and not addressed for us, we
+        // forward it to the scheduler
+        if (!addressedToUs)
+        {
+            NS_LOG_DEBUG("req not addressed to us");
+            packet->AddHeader(snicHeader);
+            packet->AddHeader(ipv4Header);
+            ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+            return;
+        }
+
+        // if we aren't the scheduler then something went wrong
+        NS_ASSERT_MSG(IsScheduler(), "packet is addressed to us but we are not scheduler");
+        // if (!IsScheduler())
+        //{
+        // NS_FATAL_ERROR("");
+        //}
+        NS_LOG_DEBUG("running sched");
+        // m_scheduler.Schedule(allocation reuqest);
+        //  reply
+        Ptr<Packet> response = Create<Packet>();
+        SnicHeader responseSnicHeader(snicHeader);
+        Ipv4Header responseIpv4Header(ipv4Header);
+        responseSnicHeader.SetPacketType(SnicHeader::ALLOCATION_RESPONSE);
+
+        responseSnicHeader.SetSourcePort(snicHeader.GetDestinationPort());
+        responseSnicHeader.SetDestinationPort(snicHeader.GetSourcePort());
+        responseSnicHeader.SetSourceIp(snicHeader.GetDestinationIp());
+        responseSnicHeader.SetDestinationIp(snicHeader.GetSourceIp());
+
+        responseIpv4Header.SetSource(ipv4Header.GetDestination());
+        responseIpv4Header.SetDestination(ipv4Header.GetSource());
+        NS_LOG_DEBUG("creating response");
+        NS_LOG_DEBUG("old src: " << ipv4Header.GetSource());
+        NS_LOG_DEBUG("old dest: " << ipv4Header.GetDestination());
+
+        response->AddHeader(responseSnicHeader);
+        response->AddHeader(responseIpv4Header);
+        m_rxCallback(this, response, protocol, dst);
+        break;
+    }
+    case SnicHeader::ALLOCATION_RESPONSE: {
+        if (!addressedToUs)
+        {
+            packet->AddHeader(snicHeader);
+            packet->AddHeader(ipv4Header);
+            ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+            return;
+        }
+        NS_LOG_DEBUG("got response");
+        // get flowid from response packet
+        // find entry in packet buffer
+        // markactive
+        // dequeue pending packets
+        // send all pending packets to destination using received route.
+        break;
+    }
+    default:
+        NS_FATAL_ERROR("unhandled snic packet type");
+    }
+
+    // packet = ProcessPacket(incomingPort, packet, protocol, src, dst);
+    // NS_LOG_DEBUG("\tsrc ipaddress: " << src);
+    // NS_LOG_DEBUG("\tsrc: " << src);
+    // NS_LOG_DEBUG("\tdst: " << " " << dst);
+    // for (uint64_t i = 0; i < m_connectedHosts.size(); i++)
+    //{
+    // NS_LOG_DEBUG("connectedHost " << i << ": " <<
+    // m_connectedHosts[i]); if (src == m_connectedHosts[i]) NS_LOG_DEBUG("from our
+    // host");
+    // }
+    // for (uint64_t i = 0; i < m_connectedSnics.size(); i++)
+    //{
+    // NS_LOG_DEBUG("connectedSnics " << i << ": " <<
+    // m_connectedSnics[i]);
+    // }
+    // for (uint32_t i = 0; i < m_node->GetNDevices(); i++)
+    //{
+    // NS_LOG_DEBUG("device " << i << ": " <<
+    // m_node->GetDevice(i)->GetAddress());
+    // }
+    //}
 }
 
 void
@@ -341,144 +484,30 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         break;
 
     case PACKET_OTHERHOST:
-        if (dst48 == m_address)
+        NS_LOG_DEBUG("packetType PACKET_OTHERHOST");
+
+        switch (protocol)
         {
-            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, match our address ");
-            // unwrap snic header
-
-            Learn(src48, incomingPort);
-            if (protocol == Ipv4L3Protocol::PROT_NUMBER)
+        case IPV4_PROT_NUMBER: {
+            NS_LOG_DEBUG("protocol Ipv4L3Protocol");
+            HandleIpv4Packet(incomingPort, packet, protocol, src48, dst48);
+            break;
+        }
+        default:
+            NS_LOG_DEBUG("protocol other");
+            if (dst48 == m_address)
             {
-                NS_LOG_DEBUG("HERE");
-                if (IsScheduler())
-                {
-                    NS_LOG_DEBUG("running sched");
-                    // m_scheduler.Schedule(allocation reuqest);
-                    //  reply
-                    Ipv4Header ipv4Header;
-                    SnicHeader snicHeader;
-                    packet->RemoveHeader(ipv4Header);
-                    packet->RemoveHeader(snicHeader);
-
-                    Ptr<Packet> response = Create<Packet>();
-                    SnicHeader responseSnicHeader(snicHeader);
-                    Ipv4Header responseIpv4Header(ipv4Header);
-                    responseSnicHeader.SetPacketType(SnicHeader::ALLOCATION_RESPONSE);
-
-                    responseSnicHeader.SetSourcePort(snicHeader.GetDestinationPort());
-                    responseSnicHeader.SetDestinationPort(snicHeader.GetSourcePort());
-                    responseSnicHeader.SetSourceIp(snicHeader.GetDestinationIp());
-                    responseSnicHeader.SetDestinationIp(snicHeader.GetSourceIp());
-
-                    responseIpv4Header.SetSource(ipv4Header.GetDestination());
-                    responseIpv4Header.SetDestination(ipv4Header.GetSource());
-                    NS_LOG_DEBUG("creating response");
-                    NS_LOG_DEBUG("old src: " << ipv4Header.GetSource());
-                    NS_LOG_DEBUG("old dest: " << ipv4Header.GetDestination());
-
-                    response->AddHeader(responseSnicHeader);
-                    response->AddHeader(responseIpv4Header);
-                    m_rxCallback(this, response, protocol, dst);
-                }
-                else
-                {
-                    NS_FATAL_ERROR("packet is addressed to us but we are not sched");
-                }
-            }
-            else
-            {
+                NS_LOG_DEBUG("match our address ");
+                // NS_FATAL_ERROR("packet is addressed to us but we are not sched");
+                Learn(src48, incomingPort);
                 m_rxCallback(this, packet, protocol, src);
             }
-        }
-        else
-        {
-            NS_LOG_DEBUG("packetType PACKET_OTHERHOST, not our address ");
-            if (protocol == Ipv4L3Protocol::PROT_NUMBER)
-            {
-                Ipv4Header ipv4Header;
-                SnicHeader snicHeader;
-                packet->RemoveHeader(ipv4Header);
-                packet->RemoveHeader(snicHeader);
-                NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
-                NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
-                switch (snicHeader.GetPacketType())
-                {
-                case SnicHeader::L4_PACKET: {
-                    if (!snicHeader.HasSeenNic())
-                    {
-                        if (IsScheduler())
-                        {
-                            NS_LOG_DEBUG("sched without alloc NOW============");
-                            // ForwardBroadcast(
-                        }
-                        else
-                        {
-                            NS_LOG_DEBUG("req sched ============");
-                            snicHeader.SetHasSeenNic();
-                            packet->AddHeader(snicHeader);
-                            packet->AddHeader(ipv4Header);
-                            RequestAllocation(packet, protocol);
-                        }
-                    }
-                    else
-                    {
-                        NS_LOG_DEBUG("FOWARDING");
-
-                        packet->AddHeader(snicHeader);
-                        packet->AddHeader(ipv4Header);
-                        ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
-                    }
-                    break;
-                }
-                case SnicHeader::ALLOCATION_REQUEST: {
-                    if (IsScheduler())
-                    {
-                        NS_FATAL_ERROR("Allocation request is not addressed to us even though we "
-                                       "are scheduler");
-                    }
-                    else
-                    {
-                        NS_LOG_DEBUG("req forwarding");
-
-                        packet->AddHeader(snicHeader);
-                        packet->AddHeader(ipv4Header);
-                        ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
-                    }
-                    break;
-                }
-                case SnicHeader::ALLOCATION_RESPONSE: {
-                    NS_LOG_DEBUG("got response");
-                    break;
-                }
-                default:
-                    NS_FATAL_ERROR("unhandled snic packet type");
-                }
-                // packet = ProcessPacket(incomingPort, packet, protocol, src, dst);
-                // NS_LOG_DEBUG("\tsrc ipaddress: " << src);
-                // NS_LOG_DEBUG("\tsrc: " << src);
-                // NS_LOG_DEBUG("\tdst: " << " " << dst);
-                // for (uint64_t i = 0; i < m_connectedHosts.size(); i++)
-                //{
-                // NS_LOG_DEBUG("connectedHost " << i << ": " <<
-                // m_connectedHosts[i]); if (src == m_connectedHosts[i]) NS_LOG_DEBUG("from our
-                // host");
-                // }
-                // for (uint64_t i = 0; i < m_connectedSnics.size(); i++)
-                //{
-                // NS_LOG_DEBUG("connectedSnics " << i << ": " <<
-                // m_connectedSnics[i]);
-                // }
-                // for (uint32_t i = 0; i < m_node->GetNDevices(); i++)
-                //{
-                // NS_LOG_DEBUG("device " << i << ": " <<
-                // m_node->GetDevice(i)->GetAddress());
-                // }
-                //}
-            }
             else
             {
+                NS_LOG_DEBUG("not our address ");
                 ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
             }
+            break;
         }
         break;
     }

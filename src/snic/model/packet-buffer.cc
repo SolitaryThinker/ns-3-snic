@@ -125,51 +125,51 @@ void
 PacketBuffer::HandleWaitReplyTimeout()
 {
     NS_LOG_FUNCTION(this);
-    NS_FATAL_ERROR("packet buffer timeout");
-    /*
+
     PacketBuffer::Entry* entry;
     bool restartWaitReplyTimer = false;
-    for (CacheI i = m_arpCache.begin(); i != m_arpCache.end(); i++)
+    for (BufferI i = m_packetBuffer.begin(); i != m_packetBuffer.end(); i++)
     {
         entry = (*i).second;
         if (entry != nullptr && entry->IsWaitReply())
         {
-            if (entry->GetRetries() < m_maxRetries)
-            {
-                NS_LOG_LOGIC("node=" << m_device->GetNode()->GetId() << ", ArpWaitTimeout for "
-                                     << entry->GetIpv4Address()
-                                     << " expired -- retransmitting arp request since retries = "
-                                     << entry->GetRetries());
-                m_arpRequestCallback(this, entry->GetIpv4Address());
-                restartWaitReplyTimer = true;
-                entry->IncrementRetries();
-            }
-            else
-            {
-                NS_LOG_LOGIC("node=" << m_device->GetNode()->GetId() << ", wait reply for "
-                                     << entry->GetIpv4Address()
-                                     << " expired -- drop since max retries exceeded: "
-                                     << entry->GetRetries());
-                entry->MarkDead();
-                entry->ClearRetries();
-                Ipv4PayloadHeaderPair pending = entry->DequeuePending();
-                while (pending.first)
-                {
-                    // add the Ipv4 header for tracing purposes
-                    pending.first->AddHeader(pending.second);
-                    m_dropTrace(pending.first);
-                    pending = entry->DequeuePending();
-                }
-            }
+            NS_FATAL_ERROR("timed OUT");
+            /*
+              if (entry->GetRetries() < m_maxRetries)
+              {
+                  NS_LOG_LOGIC("node=" << m_device->GetNode()->GetId() << ", BufferWaitTimeout for "
+                                       << entry->GetIpv4Address()
+                                       << " expired -- retransmitting arp request since retries = "
+                                       << entry->GetRetries());
+                  m_arpRequestCallback(this, entry->GetIpv4Address());
+                  restartWaitReplyTimer = true;
+                  entry->IncrementRetries();
+              }
+              else
+              {
+                  NS_LOG_LOGIC("node=" << m_device->GetNode()->GetId() << ", wait reply for "
+                                       << entry->GetIpv4Address()
+                                       << " expired -- drop since max retries exceeded: "
+                                       << entry->GetRetries());
+                  entry->MarkDead();
+                  entry->ClearRetries();
+                  Ipv4PayloadHeaderPair pending = entry->DequeuePending();
+                  while (pending.first)
+                  {
+                      // add the Ipv4 header for tracing purposes
+                      pending.first->AddHeader(pending.second);
+                      m_dropTrace(pending.first);
+                      pending = entry->DequeuePending();
+                  }
+              }*/
         }
     }
     if (restartWaitReplyTimer)
     {
         NS_LOG_LOGIC("Restarting WaitReplyTimer at " << Simulator::Now().GetSeconds());
         m_waitReplyTimer =
-            Simulator::Schedule(m_waitReplyTimeout, &ArpCache::HandleWaitReplyTimeout, this);
+            Simulator::Schedule(m_waitReplyTimeout, &PacketBuffer::HandleWaitReplyTimeout, this);
     }
-    */
 }
 
 PacketBuffer::Entry::Entry(PacketBuffer* buffer)
@@ -181,16 +181,32 @@ PacketBuffer::Entry::Entry(PacketBuffer* buffer)
 }
 
 void
-PacketBuffer::Entry::MarkWaitReply(Ptr<const Packet> packet)
+PacketBuffer::Entry::EnqueuePending(Ptr<const Packet> packet)
 {
     NS_LOG_FUNCTION(this << packet);
+    NS_ASSERT(m_state == WAIT_REPLY);
+    m_pending.push_back(packet);
+}
+
+void
+PacketBuffer::Entry::MarkActive()
+{
+    NS_LOG_FUNCTION_NOARGS();
+    NS_ASSERT(m_state == WAIT_REPLY);
+    m_state = ACTIVE;
+    // add allocation
+}
+
+void
+PacketBuffer::Entry::MarkWaitReply()
+{
+    NS_LOG_FUNCTION_NOARGS();
     // NS_LOG_FUNCTION(this << waiting.first);
     //  NS_ASSERT(m_state == ALIVE || m_state == DEAD);
     NS_ASSERT(m_pending.empty());
     // NS_ASSERT_MSG(waiting.first, "Can not add a null packet to the ARP queue");
 
     m_state = WAIT_REPLY;
-    m_pending.push_back(packet);
     // UpdateSeen();
     m_packetBuffer->StartWaitReplyTimer();
 }

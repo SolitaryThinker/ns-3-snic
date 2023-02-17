@@ -166,6 +166,12 @@ class SnicNetDevice : public NetDevice
                            const Address& dst,
                            PacketType packetType);
 
+    void HandleIpv4Packet(Ptr<NetDevice> incomingPort,
+                          Ptr<Packet> packet,
+                          uint16_t protocol,
+                          const Address& src,
+                          const Address& dst);
+
     /**
      * \brief Process a packet
      * \param incomingPort the packet incoming port
@@ -223,6 +229,7 @@ class SnicNetDevice : public NetDevice
     Ptr<NetDevice> GetLearnedState(Mac48Address source);
 
   private:
+    static const uint16_t IPV4_PROT_NUMBER = 0x0800; //!< Protocol number (0x0800)
     uint16_t m_num_hosts_connected;
     uint16_t m_num_ports;
 

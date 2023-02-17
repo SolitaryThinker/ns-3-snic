@@ -44,7 +44,9 @@ class PacketBuffer : public Object
     {
       public:
         Entry(PacketBuffer* packetBuffer);
-        void MarkWaitReply(Ptr<const Packet>);
+        void MarkActive(/* allocation */);
+        void MarkWaitReply();
+        void EnqueuePending(Ptr<const Packet>);
         bool IsDone() const;
         bool IsActive() const;
         bool IsWaitReply() const;

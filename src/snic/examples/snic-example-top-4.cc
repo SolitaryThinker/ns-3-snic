@@ -60,6 +60,7 @@ main(int argc, char* argv[])
     //  LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("Node", LOG_LEVEL_LOGIC);
     LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
+    LogComponentEnable("ArpCache", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicStackHelper", LOG_LEVEL_LOGIC);
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
