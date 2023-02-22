@@ -2,6 +2,7 @@
 #define SNIC_PACKET_BUFFER_H
 
 #include "ns3/callback.h"
+#include "ns3/flow.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/net-device.h"
 #include "ns3/nstime.h"
@@ -24,7 +25,7 @@ class PacketBuffer : public Object
     static TypeId GetTypeId();
 
     class Entry;
-    class FlowId;
+    // class FlowId;
 
     PacketBuffer();
     ~PacketBuffer() override;
@@ -37,6 +38,8 @@ class PacketBuffer : public Object
     void StartWaitReplyTimer();
 
     Entry* Add(const FlowId& flowId);
+
+    Entry* Lookup(const FlowId& flowId);
 
     // typedef std::pair<Ptr<Packet>, Ipv4Header> Ipv4PayloadHeaderPair;
 
@@ -70,23 +73,6 @@ class PacketBuffer : public Object
         uint32_t m_retries;               //!< rerty counter
     };
 
-    class FlowId
-    {
-      public:
-        FlowId(Address srcIp, uint16_t srcPort, Address dstIp, uint16_t dstPort, uint16_t protocol);
-        FlowId(const SnicHeader& snicHeader);
-
-      private:
-        friend bool operator==(const FlowId& a, const FlowId& b);
-        friend bool operator!=(const FlowId& a, const FlowId& b);
-        friend bool operator<(const FlowId& a, const FlowId& b);
-        Address m_srcIp;
-        Address m_dstIp;
-        uint16_t m_srcPort;
-        uint16_t m_dstPort;
-        uint16_t m_protocol;
-    };
-
     typedef std::map<FlowId, PacketBuffer::Entry*> Buffer;
     typedef std::map<FlowId, PacketBuffer::Entry*>::iterator BufferI;
 
@@ -104,26 +90,6 @@ class PacketBuffer : public Object
     uint32_t m_pendingQueueSize; //!< number of packets waiting for a resolution
                                  //
 };
-
-inline bool
-operator==(const PacketBuffer::FlowId& a, const PacketBuffer::FlowId& b)
-{
-    return (a.m_srcIp == b.m_srcIp && a.m_dstIp == b.m_dstIp && a.m_srcPort == b.m_srcPort &&
-            a.m_dstPort == b.m_dstPort && a.m_protocol == b.m_protocol);
-}
-
-inline bool
-operator!=(const PacketBuffer::FlowId& a, const PacketBuffer::FlowId& b)
-{
-    return !(a == b);
-}
-
-
-inline bool
-operator<(const PacketBuffer::FlowId& a, const PacketBuffer::FlowId& b)
-{
-    return (a.m_srcIp < b.m_srcIp);
-}
 
 } // namespace ns3
 

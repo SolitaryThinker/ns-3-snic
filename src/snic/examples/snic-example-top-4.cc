@@ -62,9 +62,10 @@ main(int argc, char* argv[])
     LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
     LogComponentEnable("ArpCache", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicStackHelper", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
-    LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicEchoClientApplication", LOG_LEVEL_INFO);

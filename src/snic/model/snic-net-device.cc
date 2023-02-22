@@ -9,6 +9,7 @@
 #include "network-task.h"
 
 #include "ns3/boolean.h"
+#include "ns3/flow.h"
 #include "ns3/ipv4-l3-protocol.h"
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
@@ -208,16 +209,23 @@ SnicNetDevice::RequestAllocation(Ptr<const Packet> packet, uint16_t protocol)
     SnicHeader snicHeader;
     copy->RemoveHeader(ipv4Header);
     copy->RemoveHeader(snicHeader);
+    SnicSchedulerHeader schedHeader = SnicSchedulerHeader(ipv4Header);
+
+    schedHeader.SetBandwidthDemand(10);
+    schedHeader.SetResourceDemand(5);
+    schedHeader.AddNT(5);
+    schedHeader.SetPacketType(SnicSchedulerHeader::ALLOCATION_REQUEST);
 
     ipv4Header.SetDestination(m_schedulerAddress);
     ipv4Header.SetSource(m_ipAddress);
 
     snicHeader.SetPacketType(SnicHeader::ALLOCATION_REQUEST);
 
+    request->AddHeader(schedHeader);
     request->AddHeader(snicHeader);
     request->AddHeader(ipv4Header);
     // create new flow to track packets
-    PacketBuffer::FlowId flowId = PacketBuffer::FlowId(snicHeader);
+    FlowId flowId = FlowId(schedHeader);
     // make the flow known to the packet cache
     PacketBuffer::Entry* entry = m_packetBuffer.Add(flowId);
     m_packetBuffer.SetWaitReplyTimeout(Seconds(5));
@@ -301,6 +309,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
     packet->RemoveHeader(snicHeader);
     NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
     NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
+    // packet->AddHeader(
 
     switch (snicHeader.GetPacketType())
     {
@@ -349,6 +358,8 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
             return;
         }
+        SnicSchedulerHeader schedHeader;
+        packet->RemoveHeader(schedHeader);
 
         // if we aren't the scheduler then something went wrong
         NS_ASSERT_MSG(IsScheduler(), "packet is addressed to us but we are not scheduler");
@@ -357,9 +368,10 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         // NS_FATAL_ERROR("");
         //}
         NS_LOG_DEBUG("running sched");
-        // m_scheduler.Schedule(allocation reuqest);
+        m_scheduler.Schedule(schedHeader);
         //  reply
         Ptr<Packet> response = Create<Packet>();
+        SnicSchedulerHeader responseSchedHeader(ipv4Header);
         SnicHeader responseSnicHeader(snicHeader);
         Ipv4Header responseIpv4Header(ipv4Header);
         responseSnicHeader.SetPacketType(SnicHeader::ALLOCATION_RESPONSE);
@@ -375,6 +387,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         NS_LOG_DEBUG("old src: " << ipv4Header.GetSource());
         NS_LOG_DEBUG("old dest: " << ipv4Header.GetDestination());
 
+        response->AddHeader(responseSchedHeader);
         response->AddHeader(responseSnicHeader);
         response->AddHeader(responseIpv4Header);
         m_rxCallback(this, response, protocol, dst);
@@ -388,12 +401,30 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
             return;
         }
+        SnicSchedulerHeader schedHeader;
+        packet->RemoveHeader(schedHeader);
         NS_LOG_DEBUG("got response");
         // get flowid from response packet
+        FlowId flowId = FlowId(schedHeader);
         // find entry in packet buffer
+        PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
+        entry->MarkActive();
+        // for (... send pending packets)
+
         // markactive
         // dequeue pending packets
         // send all pending packets to destination using received route.
+        break;
+    }
+    case SnicHeader::ALLOCATION_RELEASE: {
+        if (!addressedToUs)
+        {
+            packet->AddHeader(snicHeader);
+            packet->AddHeader(ipv4Header);
+            ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+            return;
+        }
+        NS_LOG_DEBUG("got release");
         break;
     }
     default:

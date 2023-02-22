@@ -161,7 +161,8 @@ class SnicHeader : public Header
     {
         L4_PACKET = 0,
         ALLOCATION_REQUEST = 1,
-        ALLOCATION_RESPONSE = 2
+        ALLOCATION_RESPONSE = 2,
+        ALLOCATION_RELEASE = 3
     };
 
   private:

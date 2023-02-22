@@ -17,14 +17,18 @@ build_lib(
                  model/network-task-addn.cc
                  model/network-task.cc
                  model/packet-buffer.cc
+                 model/snic-scheduler-header.cc
                  model/snic-scheduler.cc
+                 utils/flow.cc
                  #model/snic-channel.cc
                  helper/snic-helper.cc
     HEADER_FILES model/snic-net-device.h
                  model/network-task-addn.h
                  model/network-task.h
                  model/packet-buffer.h
+                 model/snic-scheduler-header.h
                  model/snic-scheduler.h
+                 utils/flow.h
                  #model/snic-header.h
                  #model/snic-channel.h
                  helper/snic-helper.h

@@ -121,6 +121,19 @@ PacketBuffer::Add(const FlowId& flowId)
     return entry;
 }
 
+PacketBuffer::Entry*
+PacketBuffer::Lookup(const FlowId& flowId)
+{
+    NS_LOG_FUNCTION(this);
+
+    BufferI it = m_packetBuffer.find(flowId);
+    if (it != m_packetBuffer.end())
+    {
+        return it->second;
+    }
+    return nullptr;
+}
+
 void
 PacketBuffer::HandleWaitReplyTimeout()
 {
@@ -239,26 +252,5 @@ PacketBuffer::Entry::IsExpired() const
     return (m_state == EXPIRED);
 }
 
-PacketBuffer::FlowId::FlowId(Address srcIp,
-                             uint16_t srcPort,
-                             Address dstIp,
-                             uint16_t dstPort,
-                             uint16_t protocol)
-    : m_srcIp(srcIp),
-      m_dstIp(dstIp),
-      m_srcPort(srcPort),
-      m_dstPort(dstPort),
-      m_protocol(protocol)
-{
-}
-
-PacketBuffer::FlowId::FlowId(const SnicHeader& snicHeader)
-{
-    FlowId(snicHeader.GetSourceIp(),
-           snicHeader.GetSourcePort(),
-           snicHeader.GetDestinationIp(),
-           snicHeader.GetDestinationPort(),
-           snicHeader.GetProtocol());
-}
 
 } // namespace ns3

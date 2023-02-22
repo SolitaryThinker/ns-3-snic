@@ -497,6 +497,7 @@ class SnicNetDevice : public NetDevice
     Ptr<Packet> m_currentPkt; //!< Current packet processed
     bool m_isScheduler;
     Ipv4Address m_schedulerAddress;
+    SnicScheduler m_scheduler;
     std::vector<Address> m_connectedHosts;
     std::vector<Address> m_connectedSnics;
 
