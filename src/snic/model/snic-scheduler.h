@@ -6,17 +6,22 @@
 #include "ns3/ptr.h"
 #include "ns3/snic-scheduler-header.h"
 
+#include <list>
+#include <map>
+#include <ostream>
+
 namespace ns3
 {
 
 class SVertex
 {
   public:
+    friend class SnicScheduler;
     enum VertexType
     {
-        VertexUnknown = 0, /**< Uninitialized Link Record */
-        VertexNic,         /**< Vertex representing a router in the topology */
-        VertexNode         /**< Vertex representing a network in the topology */
+        VertexTypeUnknown = 0, /**< Uninitialized Link Record */
+        VertexTypeNic,         /**< Vertex representing a router in the topology */
+        VertexTypeHost         /**< Vertex representing a network in the topology */
     };
 
     SVertex();
@@ -24,13 +29,19 @@ class SVertex
     void AddVertex(SVertex* vertex);
     void SetVertexId(Ipv4Address id);
     void SetNode(Ptr<Node> node);
+    void SetVertexType(VertexType type);
+
+    Ipv4Address GetVertexId() const;
+    Ptr<Node> GetNode() const;
+    int GetVertexType() const;
 
   private:
+    typedef std::list<SVertex*> ListOfSVertex_t;
+    friend std::ostream& operator<<(std::ostream& os, const SVertex& vertex);
     VertexType m_vertexType;
     Ipv4Address m_vertexId;
     Ptr<Node> m_node;
 
-    typedef std::list<SVertex*> ListOfSVertex_t;
     ListOfSVertex_t m_vertices;
     bool m_vertexProcessed;
 };
@@ -53,17 +64,24 @@ class SnicScheduler : public Object
 
   protected:
     void AddNode(Ptr<Node> node);
+    void SnicScheduler::BreadthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit);
 
   private:
     Ptr<NetDevice> m_device;
     bool m_initialized;
     // topology table
-    typedef std::list<SVertex*> ListOfSVertex_t;
+    typedef std::vector<SVertex*> ListOfSVertex_t;
     ListOfSVertex_t m_vertices;
+    std::map<Ptr<Node>, SVertex*> m_addedNodes;
+
+    typedef std::vector<SVertex*> Path_t;
+    std::map<SVertex*, std::map<SVertex*, std::vector<Path_t>>> allPaths;
     // topology
     // active flow table
     // map<FlowId, Allocation> m_activeFlows;
 };
+
+std::ostream& operator<<(std::ostream& os, const SVertex& vertex);
 
 } // namespace ns3
 
