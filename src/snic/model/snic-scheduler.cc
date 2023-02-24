@@ -9,6 +9,7 @@
 #include "ns3/node-list.h"
 
 #include <queue>
+#include <stack>
 
 namespace ns3
 {
@@ -51,7 +52,6 @@ SnicScheduler::AddNode(Ptr<Node> node)
     v->SetNode(node);
     m_vertices.push_back(v);
     m_addedNodes[node] = v;
-    v->SetVertexType(SVertex::VertexTypeHost);
 
     Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
     Ipv4Address ip;
@@ -87,6 +87,7 @@ SnicScheduler::AddNode(Ptr<Node> node)
             NS_LOG_DEBUG("\t interface addr: " << interfaceAddress);
             v->SetVertexId(ip);
             v->SetVertexType(SVertex::VertexTypeNic);
+            m_nicVertices.push_back(v);
         }
         else if (csma)
         {
@@ -116,6 +117,31 @@ SnicScheduler::AddNode(Ptr<Node> node)
             // see if we are attached to other csma netdevs
         }
     }
+    if (v->GetVertexType() == SVertex::VertexTypeUnknown)
+    {
+        v->SetVertexType(SVertex::VertexTypeHost);
+        m_hostVertices.push_back(v);
+    }
+}
+
+void
+SnicScheduler::PopulateStaticRoutes()
+{
+    NS_LOG_FUNCTION_NOARGS();
+
+    for (ListOfSVertex_t::iterator s_it = m_vertices.begin(); s_it != m_vertices.end(); ++s_it)
+    {
+        for (ListOfSVertex_t::iterator d_it = m_vertices.begin(); d_it != m_vertices.end(); ++d_it)
+        {
+            if (s_it != d_it)
+            {
+                SVertex* src = *s_it;
+                SVertex* dst = *d_it;
+                // XXX
+                DepthFirstTraversal(src, dst, 10);
+            }
+        }
+    }
 }
 
 void
@@ -143,13 +169,29 @@ SnicScheduler::Initialize()
         // Ptr<GlobalRouter> rtr = node->GetObject<GlobalRouter>();
     }
 
+    NS_LOG_DEBUG("all vertices: ");
     for (ListOfSVertex_t::iterator i = m_vertices.begin(); i != m_vertices.end(); i++)
     {
-        NS_LOG_DEBUG("vertex: " << **i);
+        NS_LOG_DEBUG("\tvertex: " << **i);
     }
+
+    NS_LOG_DEBUG("all nic vertices: ");
+    for (ListOfSVertex_t::iterator i = m_nicVertices.begin(); i != m_nicVertices.end(); i++)
+    {
+        NS_LOG_DEBUG("\tvertex: " << **i);
+    }
+
+    NS_LOG_DEBUG("all host vertices: ");
+    for (ListOfSVertex_t::iterator i = m_hostVertices.begin(); i != m_hostVertices.end(); i++)
+    {
+        NS_LOG_DEBUG("\tvertex: " << **i);
+    }
+
     NS_LOG_DEBUG("num node: " << c);
     // build graph
     NS_ASSERT_MSG(m_vertices.size() == NodeList::GetNNodes(), "didnt get all the nodes");
+
+    PopulateStaticRoutes();
 
     NS_FATAL_ERROR("done init");
 }
@@ -169,36 +211,56 @@ SnicScheduler::GetDevice() const
 }
 
 void
-SnicScheduler::BreadthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
+SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
 {
+    NS_LOG_FUNCTION(this << src << dst << limit);
+
     std::map<SVertex*, int> visited;
     SVertex* root = m_vertices[0];
 
-    std::vector<Path_t>& paths = allPaths[src][dst];
+    // std::vector<Path_t>& paths = allPaths[src][dst];
 
     std::stack<SVertex*> s;
 
     visited[root] = 1;
     s.push(root);
-    int length = 0;
+    // int length = 0;
+    //  Path_t path;
+
+    std::stack<SVertex*> path;
+
     while (!s.empty())
     {
-        length SVertex* v = s.pop();
-        // we found a path
-        hops(
+        SVertex* v = s.top();
+        s.pop();
+        // path.push_back(v);
+        //  we found a path
+        // hops(
         if (v == dst)
         {
+            // paths.push_back(path);
+            // path.clear();
+            std::stack<SVertex*> copy = s;
+            NS_LOG_DEBUG("found");
+            while (!copy.empty())
+            {
+                SVertex* i = copy.top();
+                copy.pop();
+                NS_LOG_DEBUG(i);
+            }
         }
         if (visited.count(v) == 0)
         {
             visited[v] = 1;
+            path.push(v);
+        }
 
-            for (SVertex::ListOfSVertex_t::iterator it = s->m_vertices.begin();
-                 it != s->m_vertices.end();
-                 ++it)
-            {
-                s.push(v);
-            }
+        for (SVertex::ListOfSVertex_t::iterator it = v->m_vertices.begin();
+             it != v->m_vertices.end();
+             ++it)
+        {
+            if (visited.count(*it) == 0)
+                s.push(*it);
         }
     }
 }
@@ -215,38 +277,24 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
         Initialize();
     }
 
-    for (ListOfSVertex_t::iterator s_it = m_vertices.begin(); s_it != m_vertices.end(); ++s_it)
-    {
-        for (ListOfSVertex_t::iterator d_it = m_vertices.begin(); d_it != m_vertices.end(); ++d_it)
-        {
-            if (s_it != d_it)
-            {
-                SVertex* src = *s_it;
-                SVertex* dst = *d_it;
-                // XXX
-                BreadthFirstTraversal(src, dst, 10);
-            }
-        }
-    }
+    // while (!q.empty())
+    //{
+    // SVertex* v = q.dequeue();
+    // if (v == g)
+    //}
 
-    while (!q.empty())
-    {
-        SVertex* v = q.dequeue();
-        if (v == g)
-    }
-
-    std::vector<std::vector<int>>
-        // we compute all paths between each pair
-        // m_node->GetDevice
-        //  uint32_t bandwidthRequested;
-        //  Ipv4Address Destination;
-        /*
-         *
-         * for each node there are a set of devices connected. we follow that until
-         * we reach snic or
-         */
-        return false;
-    }
+    // std::vector<std::vector<int>>
+    //  we compute all paths between each pair
+    //  m_node->GetDevice
+    //   uint32_t bandwidthRequested;
+    //   Ipv4Address Destination;
+    /*
+     *
+     * for each node there are a set of devices connected. we follow that until
+     * we reach snic or
+     */
+    return false;
+}
 
 void
 SnicScheduler::Release(SnicSchedulerHeader& snicHeader)
@@ -329,7 +377,7 @@ operator<<(std::ostream& os, const SVertex& vertex)
     {
         os << "\tm_node=" << (*it)->GetNode() << "\n";
     }
-    os << "\n===========\n";
+    os << "===========";
 
     return os;
 }

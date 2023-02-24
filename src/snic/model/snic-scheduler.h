@@ -64,7 +64,8 @@ class SnicScheduler : public Object
 
   protected:
     void AddNode(Ptr<Node> node);
-    void SnicScheduler::BreadthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit);
+    void DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit);
+    void PopulateStaticRoutes();
 
   private:
     Ptr<NetDevice> m_device;
@@ -72,6 +73,8 @@ class SnicScheduler : public Object
     // topology table
     typedef std::vector<SVertex*> ListOfSVertex_t;
     ListOfSVertex_t m_vertices;
+    ListOfSVertex_t m_nicVertices;
+    ListOfSVertex_t m_hostVertices;
     std::map<Ptr<Node>, SVertex*> m_addedNodes;
 
     typedef std::vector<SVertex*> Path_t;
