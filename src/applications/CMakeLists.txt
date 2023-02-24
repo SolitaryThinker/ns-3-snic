@@ -18,6 +18,8 @@ build_lib(
     model/seq-ts-size-header.cc
     model/snic-echo-client.cc
     model/snic-echo-server.cc
+    model/snic-workload-client.cc
+    model/snic-workload-server.cc
     model/three-gpp-http-client.cc
     model/three-gpp-http-header.cc
     model/three-gpp-http-server.cc
@@ -45,6 +47,8 @@ build_lib(
     model/seq-ts-size-header.h
     model/snic-echo-client.h
     model/snic-echo-server.h
+    model/snic-workload-client.h
+    model/snic-workload-server.h
     model/three-gpp-http-client.h
     model/three-gpp-http-header.h
     model/three-gpp-http-server.h
