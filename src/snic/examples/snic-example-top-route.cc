@@ -104,11 +104,13 @@ main(int argc, char* argv[])
 
     NS_LOG_INFO("Creating second sNIC cluster.");
     CreateSnic(snics, 1, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
-    //  NS_LOG_INFO("Creating 3rd sNIC cluster.");
-    //  CreateSnic(snics, 4, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
-    //  NS_LOG_INFO("Creating 4th sNIC cluster.");
-    //  CreateSnic(snics, 4, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
+    NS_LOG_INFO("Creating 3rd sNIC cluster.");
+    CreateSnic(snics, 1, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
+    // NS_LOG_INFO("Creating 4th sNIC cluster.");
+    CreateSnic(snics, 1, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
 
+    CreateSnic(snics, 1, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
+    CreateSnic(snics, 1, terminals, csmaSwitches, terminalDevices, csmaHelper, snicHelper);
     // connect two snics together
     NetDeviceContainer snicLink = csmaHelper.Install(csmaSwitches);
     // swtch.ConnectTwoSnic(snic1, snic2);
@@ -116,8 +118,8 @@ main(int argc, char* argv[])
     // swtch2.Install(switchNode2, snicLink.Get(1));
     snicHelper.AddPort(snics.Get(0), snicLink.Get(0));
     snicHelper.AddPort(snics.Get(1), snicLink.Get(1));
-    // snicHelper.AddPort(snics.Get(2), snicLink.Get(2));
-    // snicHelper.AddPort(snics.Get(3), snicLink.Get(3));
+    snicHelper.AddPort(snics.Get(2), snicLink.Get(2));
+    //  snicHelper.AddPort(snics.Get(3), snicLink.Get(3));
 
     // Add internet stack to the terminals
     SnicStackHelper internet;

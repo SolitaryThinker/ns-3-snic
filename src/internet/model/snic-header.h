@@ -189,6 +189,7 @@ class SnicHeader : public Header
     uint16_t m_checksum;   //!< Forced Checksum value
     bool m_calcChecksum;   //!< Flag to calculate checksum
     bool m_goodChecksum;   //!< Flag to indicate that checksum is correct
+    std::list<SnicRte> m_rteList;
 };
 
 } // namespace ns3

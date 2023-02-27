@@ -129,10 +129,16 @@ SnicScheduler::PopulateStaticRoutes()
 {
     NS_LOG_FUNCTION_NOARGS();
 
-    for (ListOfSVertex_t::iterator s_it = m_vertices.begin(); s_it != m_vertices.end(); ++s_it)
+    for (ListOfSVertex_t::iterator s_it = m_nicVertices.begin(); s_it != m_nicVertices.end();
+         ++s_it)
     {
-        for (ListOfSVertex_t::iterator d_it = m_vertices.begin(); d_it != m_vertices.end(); ++d_it)
+        // if ((*s_it)->GetVertexType() == SVertex::VertexTypeHost)
+        // continue;
+        for (ListOfSVertex_t::iterator d_it = m_nicVertices.begin(); d_it != m_nicVertices.end();
+             ++d_it)
         {
+            // if ((*d_it)->GetVertexType() == SVertex::VertexTypeHost)
+            // continue;
             if (s_it != d_it)
             {
                 SVertex* src = *s_it;
@@ -191,9 +197,9 @@ SnicScheduler::Initialize()
     // build graph
     NS_ASSERT_MSG(m_vertices.size() == NodeList::GetNNodes(), "didnt get all the nodes");
 
+    NS_FATAL_ERROR("done init");
     PopulateStaticRoutes();
 
-    NS_FATAL_ERROR("done init");
 }
 
 void
@@ -246,8 +252,9 @@ SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
             {
                 SVertex* i = copy.top();
                 copy.pop();
-                NS_LOG_DEBUG(i);
+                NS_LOG_DEBUG(*i);
             }
+            return;
         }
         if (visited.count(v) == 0)
         {
@@ -259,8 +266,11 @@ SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
              it != v->m_vertices.end();
              ++it)
         {
-            if (visited.count(*it) == 0)
-                s.push(*it);
+            SVertex* neighbor = *it;
+            if (neighbor->GetVertexType() == SVertex::VertexTypeHost)
+                continue;
+            if (visited.count(neighbor) == 0)
+                s.push(neighbor);
         }
     }
 }
@@ -367,15 +377,17 @@ SVertex::GetVertexType() const
 std::ostream&
 operator<<(std::ostream& os, const SVertex& vertex)
 {
-    os << "m_node=" << vertex.GetNode() << "; m_vertexId=" << vertex.GetVertexId()
-       << "; m_vertexType=" << vertex.GetVertexType() << "\n";
+    os << "m_node=" << vertex.GetNode() << " (" << vertex.GetNode()->GetId() << ")"
+       << "; m_vertexId=" << vertex.GetVertexId() << "; m_vertexType=" << vertex.GetVertexType()
+       << "\n";
 
     os << "Connected: " << vertex.m_vertices.size() << "\n";
     for (SVertex::ListOfSVertex_t::const_iterator it = vertex.m_vertices.begin();
          it != vertex.m_vertices.end();
          ++it)
     {
-        os << "\tm_node=" << (*it)->GetNode() << "\n";
+        os << "\tm_node=" << (*it)->GetNode() << " (" << (*it)->GetNode()->GetId() << ")"
+           << "\n";
     }
     os << "===========";
 
