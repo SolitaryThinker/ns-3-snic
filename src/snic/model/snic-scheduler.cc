@@ -197,7 +197,7 @@ SnicScheduler::Initialize()
     // build graph
     NS_ASSERT_MSG(m_vertices.size() == NodeList::GetNNodes(), "didnt get all the nodes");
 
-    NS_FATAL_ERROR("done init");
+    // NS_FATAL_ERROR("done init");
     PopulateStaticRoutes();
 
 }
