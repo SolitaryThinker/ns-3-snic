@@ -11,6 +11,147 @@
 namespace ns3
 {
 
+NS_OBJECT_ENSURE_REGISTERED(SnicRte);
+
+SnicRte::SnicRte()
+    : m_tag(0),
+      m_prefix("127.0.0.1"),
+      m_subnetMask("0.0.0.0"),
+      m_nextHop("0.0.0.0"),
+      m_metric(16)
+{
+}
+
+TypeId
+SnicRte::GetTypeId()
+{
+    static TypeId tid = TypeId("ns3::SnicRte")
+                            .SetParent<Header>()
+                            .SetGroupName("Internet")
+                            .AddConstructor<SnicRte>();
+    return tid;
+}
+
+TypeId
+SnicRte::GetInstanceTypeId() const
+{
+    return GetTypeId();
+}
+
+void
+SnicRte::Print(std::ostream& os) const
+{
+    os << "prefix " << m_prefix << "/" << m_subnetMask.GetPrefixLength() << " Metric "
+       << int(m_metric);
+    os << " Tag " << int(m_tag) << " Next Hop " << m_nextHop;
+}
+
+uint32_t
+SnicRte::GetSerializedSize() const
+{
+    return 20;
+}
+
+void
+SnicRte::Serialize(Buffer::Iterator i) const
+{
+    i.WriteHtonU16(2);
+    i.WriteHtonU16(m_tag);
+
+    i.WriteHtonU32(m_prefix.Get());
+    i.WriteHtonU32(m_subnetMask.Get());
+    i.WriteHtonU32(m_nextHop.Get());
+    i.WriteHtonU32(m_metric);
+}
+
+uint32_t
+SnicRte::Deserialize(Buffer::Iterator i)
+{
+    uint16_t tmp;
+
+    tmp = i.ReadNtohU16();
+    if (tmp != 2)
+    {
+        return 0;
+    }
+
+    m_tag = i.ReadNtohU16();
+    m_prefix.Set(i.ReadNtohU32());
+    m_subnetMask.Set(i.ReadNtohU32());
+    m_nextHop.Set(i.ReadNtohU32());
+
+    m_metric = i.ReadNtohU32();
+
+    return GetSerializedSize();
+}
+
+void
+SnicRte::SetPrefix(Ipv4Address prefix)
+{
+    m_prefix = prefix;
+}
+
+Ipv4Address
+SnicRte::GetPrefix() const
+{
+    return m_prefix;
+}
+
+void
+SnicRte::SetSubnetMask(Ipv4Mask subnetMask)
+{
+    m_subnetMask = subnetMask;
+}
+
+Ipv4Mask
+SnicRte::GetSubnetMask() const
+{
+    return m_subnetMask;
+}
+
+void
+SnicRte::SetRouteTag(uint16_t routeTag)
+{
+    m_tag = routeTag;
+}
+
+uint16_t
+SnicRte::GetRouteTag() const
+{
+    return m_tag;
+}
+
+void
+SnicRte::SetRouteMetric(uint32_t routeMetric)
+{
+    m_metric = routeMetric;
+}
+
+uint32_t
+SnicRte::GetRouteMetric() const
+{
+    return m_metric;
+}
+
+void
+SnicRte::SetNextHop(Ipv4Address nextHop)
+{
+    m_nextHop = nextHop;
+}
+
+Ipv4Address
+SnicRte::GetNextHop() const
+{
+    return m_nextHop;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const SnicRte& h)
+{
+    h.Print(os);
+    return os;
+}
+
 NS_LOG_COMPONENT_DEFINE("SnicHeader");
 
 NS_OBJECT_ENSURE_REGISTERED(SnicHeader);

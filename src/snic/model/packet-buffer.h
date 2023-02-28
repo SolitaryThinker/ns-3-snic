@@ -49,11 +49,22 @@ class PacketBuffer : public Object
         Entry(PacketBuffer* packetBuffer);
         void MarkActive(/* allocation */);
         void MarkWaitReply();
-        void EnqueuePending(Ptr<const Packet>);
+        void EnqueuePending(Ptr<Packet>);
+        Ptr<Packet> DequeuePending();
         bool IsDone() const;
         bool IsActive() const;
         bool IsWaitReply() const;
         bool IsExpired() const;
+
+        void SetIncomingPort(Ptr<NetDevice> incomingPort);
+        void SetProtocol(uint16_t protocol);
+        void SetSrc(const Address src);
+        void SetDst(const Address dst);
+
+        Ptr<NetDevice> GetIncomingPort() const;
+        uint16_t GetProtocol() const;
+        Address GetSrc() const;
+        Address GetDst() const;
 
       private:
         enum PacketBufferEntryState_e
@@ -69,7 +80,13 @@ class PacketBuffer : public Object
         // Time m_lastSeen; //!< last moment a packet from that address has been seen
         PacketBuffer* m_packetBuffer;
         PacketBufferEntryState_e m_state;
-        std::list<Ptr<const Packet>> m_pending; //!< list of pending packets for the entry's IP
+        std::list<Ptr<Packet>> m_pending; //!< list of pending packets for the entry's IP
+                                          //
+        Ptr<NetDevice> m_incomingPort;
+        uint16_t m_protocol;
+        Address m_src;
+        Address m_dst;
+
         uint32_t m_retries;               //!< rerty counter
     };
 

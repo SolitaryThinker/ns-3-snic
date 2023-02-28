@@ -199,7 +199,11 @@ SnicNetDevice::GetNumNT()
 }
 
 void
-SnicNetDevice::RequestAllocation(Ptr<const Packet> packet, uint16_t protocol)
+SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
+                                 Ptr<Packet> packet,
+                                 uint16_t protocol,
+                                 const Address& src,
+                                 const Address& dst)
 {
     NS_LOG_FUNCTION_NOARGS();
     Ptr<Packet> copy = packet->Copy();
@@ -209,7 +213,7 @@ SnicNetDevice::RequestAllocation(Ptr<const Packet> packet, uint16_t protocol)
     SnicHeader snicHeader;
     copy->RemoveHeader(ipv4Header);
     copy->RemoveHeader(snicHeader);
-    SnicSchedulerHeader schedHeader = SnicSchedulerHeader(ipv4Header);
+    SnicSchedulerHeader schedHeader = SnicSchedulerHeader(ipv4Header, snicHeader);
 
     schedHeader.SetBandwidthDemand(10);
     schedHeader.SetResourceDemand(5);
@@ -228,6 +232,11 @@ SnicNetDevice::RequestAllocation(Ptr<const Packet> packet, uint16_t protocol)
     FlowId flowId = FlowId(schedHeader);
     // make the flow known to the packet cache
     PacketBuffer::Entry* entry = m_packetBuffer.Add(flowId);
+    entry->SetIncomingPort(incomingPort);
+    entry->SetProtocol(protocol);
+    entry->SetSrc(src);
+    entry->SetDst(dst);
+
     m_packetBuffer.SetWaitReplyTimeout(Seconds(5));
     entry->MarkWaitReply();
     entry->EnqueuePending(packet);
@@ -338,10 +347,35 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             }
             else
             {
+                // TODO check if there exist an packet buffer entry already for
+                // this flow
                 NS_LOG_DEBUG("req sched ============");
-                packet->AddHeader(snicHeader);
-                packet->AddHeader(ipv4Header);
-                RequestAllocation(packet, protocol);
+                FlowId flowId = FlowId(ipv4Header, snicHeader);
+                PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
+                // we have an entry here already, then we can set the seensnic
+                // flag and forward the packet
+                //
+                // Otherwise we need to send a allocation request to the
+                // scheduler
+                if (entry)
+                {
+                    if (entry->IsWaitReply())
+                    {
+                        entry->EnqueuePending(packet);
+                    }
+                    else
+                    {
+                        packet->AddHeader(snicHeader);
+                        packet->AddHeader(ipv4Header);
+                        ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+                    }
+                }
+                else
+                {
+                    packet->AddHeader(snicHeader);
+                    packet->AddHeader(ipv4Header);
+                    RequestAllocation(incomingPort, packet, protocol, src, dst);
+                }
                 return;
             }
         }
@@ -371,7 +405,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         m_scheduler.Schedule(schedHeader);
         //  reply
         Ptr<Packet> response = Create<Packet>();
-        SnicSchedulerHeader responseSchedHeader(ipv4Header);
+        SnicSchedulerHeader responseSchedHeader(ipv4Header, snicHeader);
         SnicHeader responseSnicHeader(snicHeader);
         Ipv4Header responseIpv4Header(ipv4Header);
         responseSnicHeader.SetPacketType(SnicHeader::ALLOCATION_RESPONSE);
@@ -408,8 +442,21 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         FlowId flowId = FlowId(schedHeader);
         // find entry in packet buffer
         PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
+        if (entry)
+        {
+            NS_LOG_DEBUG("found entry");
+        }
         entry->MarkActive();
-        // for (... send pending packets)
+
+        Ptr<Packet> pending = entry->DequeuePending();
+        while (pending)
+        {
+            // send
+            Mac48Address src48 = Mac48Address::ConvertFrom(entry->GetSrc());
+            Mac48Address dst48 = Mac48Address::ConvertFrom(entry->GetDst());
+            ForwardUnicast(entry->GetIncomingPort(), pending, entry->GetProtocol(), src48, dst48);
+            pending = entry->DequeuePending();
+        }
 
         // markactive
         // dequeue pending packets

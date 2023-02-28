@@ -407,6 +407,11 @@ SnicEchoClient::HandleRead(Ptr<Socket> socket)
                                    << packet->GetSize() << " bytes from "
                                    << InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
                                    << InetSocketAddress::ConvertFrom(from).GetPort());
+            SnicHeader snicHeader;
+            packet->RemoveHeader(snicHeader);
+            uint8_t buffer[8];
+            snicHeader.CopyPayload(buffer, 8);
+            NS_LOG_INFO("client receive buffer content: " << *(uint64_t*)buffer);
         }
         else if (Inet6SocketAddress::IsMatchingType(from))
         {

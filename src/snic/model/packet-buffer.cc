@@ -194,11 +194,27 @@ PacketBuffer::Entry::Entry(PacketBuffer* buffer)
 }
 
 void
-PacketBuffer::Entry::EnqueuePending(Ptr<const Packet> packet)
+PacketBuffer::Entry::EnqueuePending(Ptr<Packet> packet)
 {
     NS_LOG_FUNCTION(this << packet);
     NS_ASSERT(m_state == WAIT_REPLY);
     m_pending.push_back(packet);
+}
+
+Ptr<Packet>
+PacketBuffer::Entry::DequeuePending()
+{
+    NS_LOG_FUNCTION_NOARGS();
+    if (m_pending.empty())
+    {
+        return nullptr;
+    }
+    else
+    {
+        Ptr<Packet> pending = m_pending.front();
+        m_pending.pop_front();
+        return pending;
+    }
 }
 
 void
@@ -252,5 +268,52 @@ PacketBuffer::Entry::IsExpired() const
     return (m_state == EXPIRED);
 }
 
+void
+PacketBuffer::Entry::SetIncomingPort(Ptr<NetDevice> incomingPort)
+{
+    m_incomingPort = incomingPort;
+}
+
+void
+PacketBuffer::Entry::SetProtocol(uint16_t protocol)
+{
+    m_protocol = protocol;
+}
+
+void
+PacketBuffer::Entry::SetSrc(const Address src)
+{
+    m_src = src;
+}
+
+void
+PacketBuffer::Entry::SetDst(const Address dst)
+{
+    m_dst = dst;
+}
+
+Ptr<NetDevice>
+PacketBuffer::Entry::GetIncomingPort() const
+{
+    return m_incomingPort;
+}
+
+uint16_t
+PacketBuffer::Entry::GetProtocol() const
+{
+    return m_protocol;
+}
+
+Address
+PacketBuffer::Entry::GetSrc() const
+{
+    return m_src;
+}
+
+Address
+PacketBuffer::Entry::GetDst() const
+{
+    return m_dst;
+}
 
 } // namespace ns3

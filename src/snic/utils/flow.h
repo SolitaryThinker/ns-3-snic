@@ -2,6 +2,7 @@
 #define SNIC_FLOW_H
 
 #include "ns3/ipv4-address.h"
+#include "ns3/ipv4-header.h"
 #include "ns3/snic-header.h"
 #include "ns3/snic-scheduler-header.h"
 
@@ -17,6 +18,7 @@ class FlowId
            uint16_t dstPort,
            uint16_t protocol);
     FlowId(const SnicSchedulerHeader& snicHeader);
+    FlowId(const Ipv4Header& ipv4Header, const SnicHeader& snicHeader);
 
   private:
     friend bool operator==(const FlowId& a, const FlowId& b);

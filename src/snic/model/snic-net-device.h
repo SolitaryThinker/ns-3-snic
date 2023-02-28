@@ -91,7 +91,11 @@ class SnicNetDevice : public NetDevice
     Ptr<NetworkTask> GetNT(uint32_t id);
     uint32_t GetNumNT();
 
-    void RequestAllocation(Ptr<const Packet> packet, uint16_t protocol);
+    void RequestAllocation(Ptr<NetDevice> incomingPort,
+                           Ptr<Packet> packet,
+                           uint16_t protocol,
+                           const Address& src,
+                           const Address& dst);
 
     void SetSchedulerAddress(Ipv4Address schedulerAddress);
     Ipv4Address GetSchedulerAddress() const;

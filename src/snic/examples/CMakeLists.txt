@@ -48,6 +48,16 @@ build_lib_example(
         ${libinternet}
 )
 
+build_lib_example(
+    NAME snic-example-workload
+    SOURCE_FILES snic-example-workload.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)
+
 
 build_lib_example(
     NAME snic-example-socket

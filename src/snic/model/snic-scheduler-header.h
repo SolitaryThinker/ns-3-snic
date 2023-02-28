@@ -9,6 +9,7 @@
 
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
+#include "ns3/snic-header.h"
 
 #include <stdint.h>
 #include <string>
@@ -20,8 +21,12 @@ class SnicSchedulerHeader : public Header
 {
   public:
     SnicSchedulerHeader();
-    SnicSchedulerHeader(Ipv4Address srcIp, Ipv4Address dstIp, uint8_t protocol);
-    SnicSchedulerHeader(Ipv4Header ipv4Header);
+    SnicSchedulerHeader(Ipv4Address srcIp,
+                        uint16_t srcPort,
+                        Ipv4Address dstIp,
+                        uint16_t dstPort,
+                        uint8_t protocol);
+    SnicSchedulerHeader(Ipv4Header ipv4Header, SnicHeader snicHeader);
     ~SnicSchedulerHeader() override;
 
     void SetBandwidthDemand(uint32_t demand);

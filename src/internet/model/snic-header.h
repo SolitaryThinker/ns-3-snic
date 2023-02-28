@@ -17,6 +17,112 @@
 namespace ns3
 {
 
+class SnicRte : public Header
+{
+  public:
+    SnicRte();
+
+    /**
+     * \brief Get the type ID.
+     * \return The object TypeId.
+     */
+    static TypeId GetTypeId();
+
+    /**
+     * \brief Return the instance type identifier.
+     * \return Instance type ID.
+     */
+    TypeId GetInstanceTypeId() const override;
+
+    void Print(std::ostream& os) const override;
+
+    /**
+     * \brief Get the serialized size of the packet.
+     * \return Size.
+     */
+    uint32_t GetSerializedSize() const override;
+
+    /**
+     * \brief Serialize the packet.
+     * \param start Buffer iterator.
+     */
+    void Serialize(Buffer::Iterator start) const override;
+
+    /**
+     * \brief Deserialize the packet.
+     * \param start Buffer iterator.
+     * \return Size of the packet.
+     */
+    uint32_t Deserialize(Buffer::Iterator start) override;
+
+    /**
+     * \brief Set the prefix.
+     * \param prefix The prefix.
+     */
+    void SetPrefix(Ipv4Address prefix);
+
+    /**
+     * \brief Get the prefix.
+     * \returns The prefix.
+     */
+    Ipv4Address GetPrefix() const;
+
+    /**
+     * \brief Set the subnet mask.
+     * \param subnetMask The subnet mask.
+     */
+    void SetSubnetMask(Ipv4Mask subnetMask);
+
+    /**
+     * \brief Get the subnet mask.
+     * \returns The subnet mask.
+     */
+    Ipv4Mask GetSubnetMask() const;
+
+    /**
+     * \brief Set the route tag.
+     * \param routeTag The route tag.
+     */
+    void SetRouteTag(uint16_t routeTag);
+
+    /**
+     * \brief Get the route tag.
+     * \returns The route tag.
+     */
+    uint16_t GetRouteTag() const;
+
+    /**
+     * \brief Set the route metric.
+     * \param routeMetric The route metric.
+     */
+    void SetRouteMetric(uint32_t routeMetric);
+
+    /**
+     * \brief Get the route metric.
+     * \returns The route metric.
+     */
+    uint32_t GetRouteMetric() const;
+
+    /**
+     * \brief Set the next hop.
+     * \param nextHop The next hop.
+     */
+    void SetNextHop(Ipv4Address nextHop);
+
+    /**
+     * \brief Get the next hop.
+     * \returns The next hop.
+     */
+    Ipv4Address GetNextHop() const;
+
+  private:
+    uint16_t m_tag;        //!< Route tag.
+    Ipv4Address m_prefix;  //!< Advertised prefix.
+    Ipv4Mask m_subnetMask; //!< Subnet mask.
+    Ipv4Address m_nextHop; //!< Next hop.
+    uint32_t m_metric;     //!< Route metric.
+};
+
 class SnicHeader : public Header
 {
   public:

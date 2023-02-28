@@ -29,11 +29,15 @@ SnicSchedulerHeader::SnicSchedulerHeader()
 {
 }
 
-SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp, Ipv4Address dstIp, uint8_t protocol)
+SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp,
+                                         uint16_t srcPort,
+                                         Ipv4Address dstIp,
+                                         uint16_t dstPort,
+                                         uint8_t protocol)
     : m_bandwidthDemand(0),
       m_resourceDemand(0),
-      m_sourcePort(0xfffd),
-      m_destinationPort(0xfffd),
+      m_sourcePort(srcPort),
+      m_destinationPort(dstPort),
       m_packetType(0),
       m_source(srcIp),
       m_destination(dstIp),
@@ -41,10 +45,12 @@ SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp, Ipv4Address dstIp, u
 {
 }
 
-SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Header ipv4Header)
+SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Header ipv4Header, SnicHeader snicHeader)
 {
     SnicSchedulerHeader(ipv4Header.GetSource(),
+                        snicHeader.GetSourcePort(),
                         ipv4Header.GetDestination(),
+                        snicHeader.GetDestinationPort(),
                         ipv4Header.GetProtocol());
 }
 

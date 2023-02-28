@@ -25,6 +25,15 @@ FlowId::FlowId(const SnicSchedulerHeader& snicHeader)
            snicHeader.GetProtocol());
 }
 
+FlowId::FlowId(const Ipv4Header& ipv4Header, const SnicHeader& snicHeader)
+{
+    FlowId(ipv4Header.GetSource(),
+           snicHeader.GetSourcePort(),
+           ipv4Header.GetDestination(),
+           snicHeader.GetDestinationPort(),
+           ipv4Header.GetProtocol());
+}
+
 // FlowId::FlowId(const SnicHeader& snicHeader)
 //{
 // FlowId(snicHeader.GetSourceIp(),
