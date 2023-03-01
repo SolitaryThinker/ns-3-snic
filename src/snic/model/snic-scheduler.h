@@ -62,6 +62,8 @@ class SnicScheduler : public Object
     bool Schedule(SnicSchedulerHeader& snicHeader);
     void Release(SnicSchedulerHeader& snicHeader);
 
+    uint64_t GetAlllocationCount() const;
+
   protected:
     void AddNode(Ptr<Node> node);
     void DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit);
@@ -82,6 +84,7 @@ class SnicScheduler : public Object
     // topology
     // active flow table
     // map<FlowId, Allocation> m_activeFlows;
+    uint64_t m_allocationCount;
 };
 
 std::ostream& operator<<(std::ostream& os, const SVertex& vertex);

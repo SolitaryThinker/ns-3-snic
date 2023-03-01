@@ -10,7 +10,6 @@
 
 #include "ns3/abort.h"
 #include "ns3/config.h"
-//#include "ns3/csma-channel.h"
 #include "ns3/log.h"
 #include "ns3/names.h"
 #include "ns3/net-device-queue-interface.h"
@@ -268,6 +267,42 @@ SnicHelper::CreateAndAggregateObjectFromTypeId(Ptr<NetDevice> device, const std:
     factory.SetTypeId(typeId);
     Ptr<Object> networkTask = factory.Create<Object>();
     device->AggregateObject(networkTask);
+}
+
+void
+SnicHelper::CreateSnic(NetDeviceContainer& snics,
+                       int num_terminals,
+                       NodeContainer& terminals,
+                       NodeContainer& csmaSwitches,
+                       NetDeviceContainer& terminalDevices,
+                       const CsmaHelper& csmaHelper)
+{
+    NS_LOG_FUNCTION(this << num_terminals);
+    NS_LOG_LOGIC("Creating sNIC cluster.");
+    // Create new endhost nodes
+    NodeContainer newTerminals;
+    newTerminals.Create(num_terminals);
+
+    NodeContainer newCsmaSwitch;
+    newCsmaSwitch.Create(1);
+
+    NetDeviceContainer newTerminalDevices;
+    NetDeviceContainer switchDevices;
+
+    for (int i = 0; i < num_terminals; i++)
+    {
+        NetDeviceContainer link =
+            csmaHelper.Install(NodeContainer(newTerminals.Get(i), newCsmaSwitch));
+        terminalDevices.Add(link.Get(0));
+        switchDevices.Add(link.Get(1));
+    }
+    // Create the switch netdevice, which will do the packet switching
+    Ptr<Node> switchNode = newCsmaSwitch.Get(0);
+    snics.Add(Install(switchNode, switchDevices));
+
+    terminals.Add(newTerminals);
+    csmaSwitches.Add(newCsmaSwitch);
+    terminalDevices.Add(newTerminalDevices);
 }
 
 } // namespace ns3

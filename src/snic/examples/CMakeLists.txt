@@ -49,6 +49,16 @@ build_lib_example(
 )
 
 build_lib_example(
+    NAME snic-example-top-helper
+    SOURCE_FILES snic-example-top-helper.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)
+
+build_lib_example(
     NAME snic-example-workload
     SOURCE_FILES snic-example-workload.cc
     LIBRARIES_TO_LINK

@@ -20,6 +20,8 @@ build_lib(
                  model/snic-scheduler-header.cc
                  model/snic-scheduler.cc
                  utils/flow.cc
+                 utils/packet-arrival-rate-gen.cc
+                 utils/ring-topology.cc
                  #model/snic-channel.cc
                  helper/snic-helper.cc
     HEADER_FILES model/snic-net-device.h
@@ -29,11 +31,14 @@ build_lib(
                  model/snic-scheduler-header.h
                  model/snic-scheduler.h
                  utils/flow.h
+                 utils/packet-arrival-rate-gen.h
+                 utils/ring-topology.h
                  #model/snic-header.h
                  #model/snic-channel.h
                  helper/snic-helper.h
     LIBRARIES_TO_LINK ${libcore}
                       ${libinternet}
+                      ${libcsma}
                       #${libnetwork}
     TEST_SOURCES test/snic-test-suite.cc
                  ${examples_as_tests_sources}

@@ -7,13 +7,13 @@
 #ifndef SNIC_HELPER_H
 #define SNIC_HELPER_H
 
+#include "ns3/csma-module.h"
 #include "ns3/net-device-container.h"
 #include "ns3/node-container.h"
 #include "ns3/object-factory.h"
 #include "ns3/trace-helper.h"
 
 #include <string>
-
 
 namespace ns3
 {
@@ -86,6 +86,13 @@ class SnicHelper
     void ConnectTwoSnic(NetDeviceContainer snic1, NetDeviceContainer snic2);
 
     void CreateAndAggregateObjectFromTypeId(Ptr<NetDevice> device, const std::string typeId);
+
+    void CreateSnic(NetDeviceContainer& snics,
+                    int num_terminals,
+                    NodeContainer& terminals,
+                    NodeContainer& csmaSwitches,
+                    NetDeviceContainer& terminalDevices,
+                    const CsmaHelper& csmaHelper);
 
   private:
     /**

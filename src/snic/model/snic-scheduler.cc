@@ -1,4 +1,3 @@
-
 #include "snic-scheduler.h"
 
 #include "snic-net-device.h"
@@ -195,7 +194,7 @@ SnicScheduler::Initialize()
 
     NS_LOG_DEBUG("num node: " << c);
     // build graph
-    NS_ASSERT_MSG(m_vertices.size() == NodeList::GetNNodes(), "didnt get all the nodes");
+    // NS_ASSERT_MSG(m_vertices.size() == NodeList::GetNNodes(), "didnt get all the nodes");
 
     // NS_FATAL_ERROR("done init");
     PopulateStaticRoutes();
@@ -286,6 +285,8 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     {
         Initialize();
     }
+    m_allocationCount++;
+    NS_LOG_DEBUG("allocationCount: " << m_allocationCount);
 
     // while (!q.empty())
     //{
@@ -309,6 +310,12 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
 void
 SnicScheduler::Release(SnicSchedulerHeader& snicHeader)
 {
+}
+
+uint64_t
+SnicScheduler::GetAlllocationCount() const
+{
+    return m_allocationCount;
 }
 
 // ---------------------------------------------------------------------------
