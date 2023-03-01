@@ -46,15 +46,18 @@ RingTopologyHelper::RingTopologyHelper(uint32_t nSnics, uint32_t nHosts, uint32_
             tmp.Add(m_csmaSwitches.Get(i));
             // add the next sNIC, rolling over if needed
             tmp.Add(m_csmaSwitches.Get((i + 1) % nSnics));
+            NetDeviceContainer tmpDevs = m_csmaHelper.Install(tmp);
             // create an independent csma channel for these two
-            snicLink.Add(m_csmaHelper.Install(tmp));
+            snicLink.Add(tmpDevs);
+            snicHelper.AddPort(m_snics.Get(i), tmpDevs.Get(0));
+            snicHelper.AddPort(m_snics.Get((i + 1) % nSnics), tmpDevs.Get(1));
         }
     }
 
-    for (uint32_t i = 0; i < nSnics; ++i)
-    {
-        snicHelper.AddPort(m_snics.Get(i), snicLink.Get(i));
-    }
+    // for (uint32_t i = 0; i < nSnics; ++i)
+    //{
+    // snicHelper.AddPort(m_snics.Get(i), snicLink.Get(i));
+    //}
 
     // add TOR switch
     NodeContainer torSwitchNode;

@@ -30,7 +30,7 @@ main(int argc, char* argv[])
     //   LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicEchoClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("SnicEchoServerApplication", LOG_LEVEL_INFO);
 
@@ -42,7 +42,7 @@ main(int argc, char* argv[])
     Time::SetResolution(Time::NS);
     NS_LOG_UNCOND("Hello Simulator");
 
-    RingTopologyHelper ringHelper = RingTopologyHelper(4, 1, 0);
+    RingTopologyHelper ringHelper = RingTopologyHelper(2, 1, 0);
 
     NodeContainer terminals = ringHelper.GetTerminals();
 
@@ -63,7 +63,7 @@ main(int argc, char* argv[])
     echoClient2.SetAttribute("PacketSize", UintegerValue(1024));
 
     // ApplicationContainer clientApps = echoClient2.Install(terminals.Get(2));
-    ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(2));
+    ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(1));
     clientApps2.Start(Seconds(2.0));
     clientApps2.Stop(Seconds(10.0));
     //   clientApps.Start(Seconds(2.0));
