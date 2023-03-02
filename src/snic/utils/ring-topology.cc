@@ -34,6 +34,10 @@ RingTopologyHelper::RingTopologyHelper(uint32_t nSnics, uint32_t nHosts, uint32_
     {
         // less than 4 snics in a ring topology is fully connected
         snicLink.Add(m_csmaHelper.Install(m_csmaSwitches));
+        for (uint32_t i = 0; i < nSnics; ++i)
+        {
+            snicHelper.AddPort(m_snics.Get(i), snicLink.Get(i));
+        }
     }
     else
     {
@@ -60,8 +64,8 @@ RingTopologyHelper::RingTopologyHelper(uint32_t nSnics, uint32_t nHosts, uint32_
     //}
 
     // add TOR switch
-    NodeContainer torSwitchNode;
-    torSwitchNode.Create(1);
+    // NodeContainer torSwitchNode;
+    // torSwitchNode.Create(1);
     // add scheduler nic
 
     // snicHelper.AddPort(m_snics.Get(1), snicLink.Get(1));
