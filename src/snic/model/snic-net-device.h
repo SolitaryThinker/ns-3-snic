@@ -151,6 +151,8 @@ class SnicNetDevice : public NetDevice
     void Receive(Ptr<Packet> p, Ptr<SnicNetDevice> sender);
 
   protected:
+    void AddAddress(Mac48Address addr);
+    bool IsOurAddress(Mac48Address addr) const;
     void DoDispose() override;
 
     /**
@@ -470,7 +472,8 @@ class SnicNetDevice : public NetDevice
     std::map<Mac48Address, LearnedState> m_learnState;   //!< Container for known address statuses
     Ptr<Node> m_node;                                    //!< Node owning this NetDevice
     Mac48Address m_address;                              //!< Mac48Address of this NetDevice
-    Ipv4Address m_ipAddress;                             //!< Mac48Address of this NetDevice
+    std::map<Mac48Address, Mac48Address> m_addresses;    //!< All Mac48Addresses of this NetDevice
+    Ipv4Address m_ipAddress;                             //!< Ipv4Address of this NetDevice
     Time m_expirationTime; //!< time it takes for learned MAC state to expire
                            //
     Ptr<BridgeChannel> m_channel;                        //!< virtual bridged channel
@@ -504,6 +507,7 @@ class SnicNetDevice : public NetDevice
     SnicScheduler m_scheduler;
     std::vector<Address> m_connectedHosts;
     std::vector<Address> m_connectedSnics;
+    std::map<uint32_t, uint32_t> m_broadcastedPackets;
 
     PacketBuffer m_packetBuffer;
   };

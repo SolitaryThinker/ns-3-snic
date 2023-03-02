@@ -84,9 +84,9 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort)
 void
 SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort, bool isPeerSnic)
 {
-    NS_LOG_FUNCTION_NOARGS();
+    NS_LOG_FUNCTION(this);
     NS_ASSERT(snicPort != this);
-    NS_LOG_UNCOND("adding snic port");
+    NS_LOG_UNCOND("adding snic port addr: " << snicPort->GetAddress());
 
     if (!Mac48Address::IsMatchingType(snicPort->GetAddress()))
     {
@@ -100,6 +100,7 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort, bool isPeerSnic)
     {
         m_address = Mac48Address::ConvertFrom(snicPort->GetAddress());
     }
+    AddAddress(Mac48Address::ConvertFrom(snicPort->GetAddress()));
     if (isPeerSnic)
         m_connectedSnics.push_back(snicPort->GetAddress());
     else
@@ -282,6 +283,20 @@ Ipv4Address
 SnicNetDevice::GetIpAddress() const
 {
     return m_ipAddress;
+}
+
+void
+SnicNetDevice::AddAddress(Mac48Address addr)
+{
+    NS_LOG_FUNCTION(this << addr);
+    m_addresses[addr] = Mac48Address();
+}
+
+bool
+SnicNetDevice::IsOurAddress(Mac48Address addr) const
+{
+    NS_LOG_FUNCTION(this << addr);
+    return m_addresses.count(addr) > 0;
 }
 
 void
@@ -539,11 +554,13 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         m_promiscRxCallback(this, packet, protocol, src, dst, packetType);
     }
     NS_LOG_DEBUG("after promisc");
+    // bool isOurAddress = IsOurAddress(dst48);
+    bool isOurAddress = dst48 == m_address;
 
     switch (packetType)
     {
     case PACKET_HOST:
-        if (dst48 == m_address)
+        if (isOurAddress)
         {
             NS_LOG_DEBUG("packetType PACKET_HOST our address");
             // unwrap snic header
@@ -555,9 +572,15 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     case PACKET_BROADCAST:
     case PACKET_MULTICAST:
         NS_LOG_DEBUG("packetType PACKET_MULTICAST ");
+        if (m_broadcastedPackets.count(packet->GetUid()) > 0)
+        {
+            NS_LOG_DEBUG("packetType PACKET_MULTICAST already seen == dropping");
+            break;
+        }
         // if (protocol != ArpL3Protocol::PROT_NUMBER)
         m_rxCallback(this, packet, protocol, src);
         // warp snic header
+        m_broadcastedPackets[packet->GetUid()] = 1;
         ForwardBroadcast(incomingPort, packet, protocol, src48, dst48);
         break;
 
@@ -573,7 +596,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
         }
         default:
             NS_LOG_DEBUG("protocol other");
-            if (dst48 == m_address)
+            if (isOurAddress)
             {
                 NS_LOG_DEBUG("match our address ");
                 // NS_FATAL_ERROR("packet is addressed to us but we are not sched");
