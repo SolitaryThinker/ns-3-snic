@@ -153,16 +153,18 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
         m_rxTraceWithAddresses(packet, from, localAddress);
         if (InetSocketAddress::IsMatchingType(from))
         {
+            m_numReceived++;
             NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " server received "
                                    << packet->GetSize() << " bytes from "
                                    << InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
                                    << InetSocketAddress::ConvertFrom(from).GetPort());
+            NS_LOG_INFO("numReceived=" << m_numReceived);
             std::ostringstream coll;
             packet->Print(coll);
-            NS_LOG_DEBUG("packet content is " << coll.str());
+            // NS_LOG_DEBUG("packet content is " << coll.str());
             uint8_t buffer[10];
             packet->CopyData((uint8_t*)&buffer, 5);
-            NS_LOG_DEBUG("packet is " << buffer);
+            // NS_LOG_DEBUG("packet is " << buffer);
         }
         else if (Inet6SocketAddress::IsMatchingType(from))
         {
@@ -175,23 +177,23 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
         packet->RemoveAllPacketTags();
         packet->RemoveAllByteTags();
 
-        NS_LOG_LOGIC("Echoing packet");
-        socket->SendTo(packet, 0, from);
+        // NS_LOG_LOGIC("Echoing packet");
+        // socket->SendTo(packet, 0, from);
 
-        if (InetSocketAddress::IsMatchingType(from))
-        {
-            NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " server sent "
-                                   << packet->GetSize() << " bytes to "
-                                   << InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
-                                   << InetSocketAddress::ConvertFrom(from).GetPort());
-        }
-        else if (Inet6SocketAddress::IsMatchingType(from))
-        {
-            NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " server sent "
-                                   << packet->GetSize() << " bytes to "
-                                   << Inet6SocketAddress::ConvertFrom(from).GetIpv6() << " port "
-                                   << Inet6SocketAddress::ConvertFrom(from).GetPort());
-        }
+        // if (InetSocketAddress::IsMatchingType(from))
+        //{
+        // NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " server sent "
+        //<< packet->GetSize() << " bytes to "
+        //<< InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
+        //<< InetSocketAddress::ConvertFrom(from).GetPort());
+        //}
+        // else if (Inet6SocketAddress::IsMatchingType(from))
+        //{
+        // NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " server sent "
+        //<< packet->GetSize() << " bytes to "
+        //<< Inet6SocketAddress::ConvertFrom(from).GetIpv6() << " port "
+        //<< Inet6SocketAddress::ConvertFrom(from).GetPort());
+        //}
     }
 }
 

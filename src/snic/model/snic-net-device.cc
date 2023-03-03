@@ -86,7 +86,7 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort, bool isPeerSnic)
 {
     NS_LOG_FUNCTION(this);
     NS_ASSERT(snicPort != this);
-    NS_LOG_UNCOND("adding snic port addr: " << snicPort->GetAddress());
+    NS_LOG_DEBUG("adding snic port addr: " << snicPort->GetAddress());
 
     if (!Mac48Address::IsMatchingType(snicPort->GetAddress()))
     {
@@ -112,9 +112,7 @@ SnicNetDevice::AddSnicPort(Ptr<NetDevice> snicPort, bool isPeerSnic)
                                     snicPort,
                                     true);
     m_ports.push_back(snicPort);
-    NS_LOG_UNCOND("adding channel");
     m_channel->AddChannel(snicPort->GetChannel());
-    NS_LOG_UNCOND("after adding channel");
 }
 
 /*
@@ -527,16 +525,14 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     Packet::EnablePrinting();
     NS_LOG_FUNCTION(this << incomingPort << protocol);
     NS_LOG_DEBUG("UID is " << packet->GetUid());
-    NS_LOG_DEBUG("id is " << m_node->GetId());
+    // NS_LOG_DEBUG("id is " << m_node->GetId());
 
     Mac48Address src48 = Mac48Address::ConvertFrom(src);
     Mac48Address dst48 = Mac48Address::ConvertFrom(dst);
-    NS_LOG_DEBUG("mac src is " << src48);
-    NS_LOG_DEBUG("mac dest is " << dst48);
-    // NS_LOG_DEBUG("src is " << InetSocketAddress::ConvertFrom(src));
-    // NS_LOG_DEBUG("dest is " << InetSocketAddress::ConvertFrom(dst));
-    NS_LOG_DEBUG("m_address is " << m_address);
-    NS_LOG_DEBUG("packetType is " << packetType);
+    // NS_LOG_DEBUG("mac src is " << src48);
+    // NS_LOG_DEBUG("mac dest is " << dst48);
+    // NS_LOG_DEBUG("m_address is " << m_address);
+    // NS_LOG_DEBUG("packetType is " << packetType);
     SnicHeader snicHeader;
     Ptr<Packet> copypkt = packet->Copy();
     copypkt->RemoveHeader(snicHeader);
@@ -546,14 +542,12 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     // snicHeader.Print(coll);
 
     NS_LOG_DEBUG("header is " << coll.str());
-    NS_LOG_DEBUG("header nt is " << snicHeader.GetNT());
+    // NS_LOG_DEBUG("header nt is " << snicHeader.GetNT());
 
     if (!m_promiscRxCallback.IsNull())
     {
-        NS_LOG_DEBUG("doing promisc");
         m_promiscRxCallback(this, packet, protocol, src, dst, packetType);
     }
-    NS_LOG_DEBUG("after promisc");
     // bool isOurAddress = IsOurAddress(dst48);
     bool isOurAddress = dst48 == m_address;
 
@@ -619,7 +613,6 @@ void
 SnicNetDevice::Receive(Ptr<Packet> p, Ptr<SnicNetDevice> sender)
 {
     NS_LOG_FUNCTION_NOARGS();
-    NS_LOG_UNCOND("==========Receieved from peer Snic=======");
 }
 
 Ptr<Packet>
@@ -885,7 +878,6 @@ SnicNetDevice::SendFrom(Ptr<Packet> packet,
                                 uint16_t protocolNumber)
 {
     NS_LOG_FUNCTION_NOARGS();
-    NS_LOG_UNCOND("NOW IN OTHER NIC");
 
     Mac48Address dst = Mac48Address::ConvertFrom(dest);
 

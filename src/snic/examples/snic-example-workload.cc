@@ -25,7 +25,7 @@ main(int argc, char* argv[])
     // LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
     // LogComponentEnable("ArpCache", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("SnicStackHelper", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //    LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
@@ -40,9 +40,8 @@ main(int argc, char* argv[])
     cmd.Parse(argc, argv);
 
     Time::SetResolution(Time::NS);
-    NS_LOG_UNCOND("Hello Simulator");
 
-    RingTopologyHelper ringHelper = RingTopologyHelper(4, 1, 0);
+    RingTopologyHelper ringHelper = RingTopologyHelper(2, 1, 0);
 
     NodeContainer terminals = ringHelper.GetTerminals();
 
@@ -58,8 +57,8 @@ main(int argc, char* argv[])
     serverApps2.Stop(Seconds(10.0));
 
     SnicWorkloadClientHelper echoClient2(interfaces.GetAddress(0), 9);
-    echoClient2.SetAttribute("MaxPackets", UintegerValue(1));
-    echoClient2.SetAttribute("Interval", TimeValue(Seconds(1.0)));
+    echoClient2.SetAttribute("MaxPackets", UintegerValue(2));
+    echoClient2.SetAttribute("Interval", TimeValue(MilliSeconds(40.0)));
     echoClient2.SetAttribute("PacketSize", UintegerValue(1024));
 
     // ApplicationContainer clientApps = echoClient2.Install(terminals.Get(2));

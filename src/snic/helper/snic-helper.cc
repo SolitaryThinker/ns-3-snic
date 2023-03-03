@@ -225,7 +225,6 @@ SnicHelper::Install(Ptr<Node> node, NetDeviceContainer c)
 
   for (NetDeviceContainer::Iterator i = c.Begin(); i != c.End(); ++i)
   {
-      NS_LOG_UNCOND("hihi test");
       NS_LOG_LOGIC("**** Add SnicPort " << *i);
       dev->AddSnicPort(*i);
       NS_LOG_LOGIC("**** after Add SnicPort " << *i);

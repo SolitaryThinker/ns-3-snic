@@ -14,10 +14,10 @@ PacketArrivalRateGen::GetTypeId()
                             .SetGroupName("Snic")
                             .AddConstructor<PacketArrivalRateGen>();
     //.AddAttribute("Average",
-    //"The MAC-level Maximum Transmission Unit",
-    // UintegerValue(5),
-    // MakeUintegerAccessor(&SnicNetDevice::SetMtu, &SnicNetDevice::GetMtu),
-    // MakeUintegerChecker<uint16_t>())
+    //"Average in ms of the distribution",
+    // TimeValue(MilliSeconds(1000)),
+    // MakeTimeAccessor(&PacketArrivalRateGen::m_avg),
+    // MakeTimeChecker());
     //.AddAttribute("std",
     //"Enable the learning mode of the Learning Bridge",
     // UintegerValue(10),
@@ -39,11 +39,10 @@ PacketArrivalRateGen::GetTypeId()
 
 PacketArrivalRateGen::PacketArrivalRateGen()
     : m_isPeaking(false),
-      m_avg(5),
       m_std(5),
-      m_distribution(5, 5)
+      m_distribution(20, m_std)
 {
-    NS_LOG_FUNCTION(this << 5 << 5);
+    NS_LOG_FUNCTION(this << 155 << 5);
 }
 
 PacketArrivalRateGen::PacketArrivalRateGen(uint64_t avg, uint64_t std)
@@ -63,7 +62,7 @@ PacketArrivalRateGen::~PacketArrivalRateGen()
 Time
 PacketArrivalRateGen::NextInterval()
 {
-    return NanoSeconds(m_distribution(m_generator));
+    return MilliSeconds(m_distribution(m_generator));
 }
 
 void

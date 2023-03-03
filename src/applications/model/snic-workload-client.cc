@@ -327,16 +327,12 @@ SnicWorkloadClient::Send()
         //
         p = Create<Packet>(m_size);
     }
-    NS_LOG_INFO("adding snic header in client");
     SnicHeader header;
     uint8_t buffer[8];
     *(int64_t*)buffer = 2;
     header.AddNT(5);
-    NS_LOG_INFO("adding buffer to snic header as payload" << buffer);
-    NS_LOG_INFO("adding buffer to snic header as payload" << *(int64_t*)buffer);
     header.SetPayload(buffer, 8);
     p->AddHeader(header);
-    NS_LOG_INFO("after adding snic header in client" << header.GetNT());
     Address localAddress;
     m_socket->GetSockName(localAddress);
     // call to the trace sinks before the packet is actually sent,
@@ -388,7 +384,9 @@ SnicWorkloadClient::Send()
 
     if (m_sent < m_count)
     {
-        Time nextInterval = m_interval_gen.NextInterval();
+        // Time nextInterval = m_interval_gen.NextInterval();
+        Time nextInterval = m_interval;
+        NS_LOG_INFO("scheduling transmit: " << nextInterval);
         ScheduleTransmit(nextInterval);
     }
 }
