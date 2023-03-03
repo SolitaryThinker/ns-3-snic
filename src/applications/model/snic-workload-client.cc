@@ -388,7 +388,8 @@ SnicWorkloadClient::Send()
 
     if (m_sent < m_count)
     {
-        ScheduleTransmit(m_interval);
+        Time nextInterval = m_interval_gen.NextInterval();
+        ScheduleTransmit(nextInterval);
     }
 }
 

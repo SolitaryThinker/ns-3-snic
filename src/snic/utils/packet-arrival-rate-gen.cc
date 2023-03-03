@@ -66,4 +66,16 @@ PacketArrivalRateGen::NextInterval()
     return NanoSeconds(m_distribution(m_generator));
 }
 
+void
+PacketArrivalRateGen::SetAverage(uint64_t avg)
+{
+    m_avg = avg;
+}
+
+void
+PacketArrivalRateGen::SetStd(uint64_t std)
+{
+    m_std = std;
+}
+
 } // namespace ns3

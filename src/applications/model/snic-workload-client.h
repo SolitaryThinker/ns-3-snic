@@ -4,6 +4,7 @@
 #include "ns3/application.h"
 #include "ns3/event-id.h"
 #include "ns3/ipv4-address.h"
+#include "ns3/packet-arrival-rate-gen.h"
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 
@@ -151,6 +152,7 @@ class SnicWorkloadClient : public Application
     Address m_peerAddress; //!< Remote peer address
     uint16_t m_peerPort;   //!< Remote peer port
     EventId m_sendEvent;   //!< Event to send the next packet
+    PacketArrivalRateGen m_interval_gen;
 
     /// Callbacks for tracing the packet Tx events
     TracedCallback<Ptr<const Packet>> m_txTrace;

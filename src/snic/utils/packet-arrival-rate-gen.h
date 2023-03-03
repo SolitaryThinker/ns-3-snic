@@ -19,6 +19,9 @@ class PacketArrivalRateGen : public Object
     ~PacketArrivalRateGen();
     Time NextInterval();
 
+    void SetAverage(uint64_t avg);
+    void SetStd(uint64_t std);
+
   private:
     bool m_isPeaking;
     uint64_t m_avg;
