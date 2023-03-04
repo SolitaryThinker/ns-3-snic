@@ -374,12 +374,16 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                 {
                     if (entry->IsWaitReply())
                     {
+                        packet->AddHeader(snicHeader);
+                        packet->AddHeader(ipv4Header);
                         entry->EnqueuePending(packet);
+                        NS_LOG_DEBUG("flow waitreply, enque");
                     }
                     else
                     {
                         packet->AddHeader(snicHeader);
                         packet->AddHeader(ipv4Header);
+                        NS_LOG_DEBUG("flow not waitreply, enque");
                         ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
                     }
                 }

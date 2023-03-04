@@ -18,6 +18,7 @@ main(int argc, char* argv[])
     bool verbose = true;
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
+    LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
@@ -29,8 +30,8 @@ main(int argc, char* argv[])
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //    LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
-    //  LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_INFO);
     LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_INFO);
 
@@ -54,17 +55,17 @@ main(int argc, char* argv[])
 
     ApplicationContainer serverApps2 = echoServer.Install(terminals.Get(0));
     serverApps2.Start(Seconds(1.0));
-    serverApps2.Stop(Seconds(10.0));
+    serverApps2.Stop(Seconds(20.0));
 
     SnicWorkloadClientHelper echoClient2(interfaces.GetAddress(0), 9);
-    echoClient2.SetAttribute("MaxPackets", UintegerValue(2));
-    echoClient2.SetAttribute("Interval", TimeValue(MilliSeconds(40.0)));
+    echoClient2.SetAttribute("MaxPackets", UintegerValue(200));
+    echoClient2.SetAttribute("Interval", TimeValue(MicroSeconds(200.0)));
     echoClient2.SetAttribute("PacketSize", UintegerValue(1024));
 
     // ApplicationContainer clientApps = echoClient2.Install(terminals.Get(2));
     ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(1));
     clientApps2.Start(Seconds(2.0));
-    clientApps2.Stop(Seconds(10.0));
+    clientApps2.Stop(Seconds(20.0));
     //   clientApps.Start(Seconds(2.0));
     //   clientApps.Stop(Seconds(10.0));
 

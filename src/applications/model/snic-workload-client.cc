@@ -352,6 +352,12 @@ SnicWorkloadClient::Send()
             localAddress,
             Inet6SocketAddress(Ipv6Address::ConvertFrom(m_peerAddress), m_peerPort));
     }
+    std::ostringstream coll;
+
+    p->Print(coll);
+    // snicHeader.Print(coll);
+
+    NS_LOG_DEBUG("header is " << coll.str());
     m_socket->Send(p);
     ++m_sent;
 
@@ -360,6 +366,7 @@ SnicWorkloadClient::Send()
         NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " client sent " << m_size
                                << " bytes to " << Ipv4Address::ConvertFrom(m_peerAddress)
                                << " port " << m_peerPort);
+        NS_LOG_INFO("packet uid: " << p->GetUid());
     }
     else if (Ipv6Address::IsMatchingType(m_peerAddress))
     {

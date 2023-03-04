@@ -158,7 +158,9 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
                                    << packet->GetSize() << " bytes from "
                                    << InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
                                    << InetSocketAddress::ConvertFrom(from).GetPort());
-            NS_LOG_INFO("numReceived=" << m_numReceived);
+            uint32_t uid = packet->GetUid();
+            NS_LOG_INFO("numReceived=" << m_numReceived << " uid:" << uid);
+            m_uids.push_back(uid);
             std::ostringstream coll;
             packet->Print(coll);
             // NS_LOG_DEBUG("packet content is " << coll.str());
@@ -194,6 +196,11 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
         //<< Inet6SocketAddress::ConvertFrom(from).GetIpv6() << " port "
         //<< Inet6SocketAddress::ConvertFrom(from).GetPort());
         //}
+    }
+    NS_LOG_INFO("uids:");
+    for (auto i : m_uids)
+    {
+        NS_LOG_INFO("uid: " << i);
     }
 }
 

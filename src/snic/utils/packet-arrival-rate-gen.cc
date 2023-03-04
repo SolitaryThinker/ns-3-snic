@@ -40,7 +40,7 @@ PacketArrivalRateGen::GetTypeId()
 PacketArrivalRateGen::PacketArrivalRateGen()
     : m_isPeaking(false),
       m_std(5),
-      m_distribution(20, m_std)
+      m_distribution(10, m_std)
 {
     NS_LOG_FUNCTION(this << 155 << 5);
 }

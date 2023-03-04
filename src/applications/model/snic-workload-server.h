@@ -57,6 +57,7 @@ class SnicWorkloadServer : public Application
     Address m_local;       //!< local multicast address
     // tmp stat variables
     uint64_t m_numReceived = 0;
+    std::vector<uint32_t> m_uids;
 
     /// Callbacks for tracing the packet Rx events
     TracedCallback<Ptr<const Packet>> m_rxTrace;
