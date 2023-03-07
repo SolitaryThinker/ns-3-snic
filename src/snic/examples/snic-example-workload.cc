@@ -19,6 +19,7 @@ main(int argc, char* argv[])
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
@@ -32,8 +33,8 @@ main(int argc, char* argv[])
     //   LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_INFO);
-    LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_INFO);
+    LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_LOGIC);
 
     CommandLine cmd(__FILE__);
     cmd.AddValue("verbose", "Tell application to log if true", verbose);
@@ -42,7 +43,7 @@ main(int argc, char* argv[])
 
     Time::SetResolution(Time::NS);
 
-    RingTopologyHelper ringHelper = RingTopologyHelper(2, 1, 0);
+    RingTopologyHelper ringHelper = RingTopologyHelper(5, 1, 0);
 
     NodeContainer terminals = ringHelper.GetTerminals();
 
@@ -58,13 +59,19 @@ main(int argc, char* argv[])
     serverApps2.Stop(Seconds(20.0));
 
     SnicWorkloadClientHelper echoClient2(interfaces.GetAddress(0), 9);
-    echoClient2.SetAttribute("MaxPackets", UintegerValue(200));
-    echoClient2.SetAttribute("Interval", TimeValue(MicroSeconds(200.0)));
-    echoClient2.SetAttribute("PacketSize", UintegerValue(1024));
+    echoClient2.SetAttribute("MaxPackets", UintegerValue(490));
+    echoClient2.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
+    echoClient2.SetAttribute("PacketSize", UintegerValue(512));
 
     // ApplicationContainer clientApps = echoClient2.Install(terminals.Get(2));
-    ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(1));
+    ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(4));
     clientApps2.Start(Seconds(2.0));
+    // clientApps2.Stop(Seconds(3.0));
+
+    // Ptr<SnicWorkloadServer> server =
+    // DynamicCast<SnicWorkloadServer, Application>(serverApps2.Get(0));
+    // server->Reset();
+    // clientApps2.Start(Seconds(3.1));
     clientApps2.Stop(Seconds(20.0));
     //   clientApps.Start(Seconds(2.0));
     //   clientApps.Stop(Seconds(10.0));

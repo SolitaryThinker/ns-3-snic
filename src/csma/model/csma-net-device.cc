@@ -671,7 +671,8 @@ CsmaNetDevice::Attach(Ptr<CsmaChannel> ch)
     //
     // We use the Ethernet interframe gap of 96 bit times.
     //
-    m_tInterframeGap = m_bps.CalculateBytesTxTime(96 / 8);
+    // m_tInterframeGap = m_bps.CalculateBytesTxTime(96 / 8);
+    m_tInterframeGap = NanoSeconds(0.96);
 
     //
     // This device is up whenever a channel is attached to it.

@@ -7,6 +7,8 @@
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 
+#include <queue>
+
 namespace ns3
 {
 
@@ -34,6 +36,7 @@ class SnicWorkloadServer : public Application
     static TypeId GetTypeId();
     SnicWorkloadServer();
     ~SnicWorkloadServer() override;
+    void Reset();
 
   protected:
     void DoDispose() override;
@@ -58,6 +61,11 @@ class SnicWorkloadServer : public Application
     // tmp stat variables
     uint64_t m_numReceived = 0;
     std::vector<uint32_t> m_uids;
+    Time m_avgInterval;
+    Time m_avgTotal;
+    Time m_lastPacket;
+    Time m_last5Packets;
+    std::queue<Time> m_lastTimes;
 
     /// Callbacks for tracing the packet Rx events
     TracedCallback<Ptr<const Packet>> m_rxTrace;

@@ -15,7 +15,10 @@ RingTopologyHelper::RingTopologyHelper(uint32_t nSnics, uint32_t nHosts, uint32_
     NS_LOG_FUNCTION(this << nSnics << nHosts);
 
     // CsmaHelper csmaHelper;
-    m_csmaHelper.SetChannelAttribute("DataRate", DataRateValue(1000000000));
+    // m_csmaHelper.SetChannelAttribute("DataRate", DataRateValue(1000000000));
+    // m_csmaHelper.SetChannelAttribute("DataRate", DataRateValue(DataRate("600Gbps")));
+    // m_csmaHelper.SetChannelAttribute("DataRate", DataRateValue(DataRate("100Gbps")));
+    m_csmaHelper.SetChannelAttribute("DataRate", DataRateValue(DataRate("1000Gbps")));
     m_csmaHelper.SetChannelAttribute("Delay", TimeValue(NanoSeconds(0)));
 
     SnicHelper snicHelper;

@@ -463,7 +463,6 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         {
             NS_LOG_DEBUG("found entry");
         }
-        entry->MarkActive();
 
         Ptr<Packet> pending = entry->DequeuePending();
         while (pending)
@@ -471,9 +470,11 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             // send
             Mac48Address src48 = Mac48Address::ConvertFrom(entry->GetSrc());
             Mac48Address dst48 = Mac48Address::ConvertFrom(entry->GetDst());
+            NS_LOG_DEBUG("dequeue uid " << pending->GetUid());
             ForwardUnicast(entry->GetIncomingPort(), pending, entry->GetProtocol(), src48, dst48);
             pending = entry->DequeuePending();
         }
+        entry->MarkActive();
 
         // markactive
         // dequeue pending packets
@@ -528,7 +529,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
 {
     Packet::EnablePrinting();
     NS_LOG_FUNCTION(this << incomingPort << protocol);
-    NS_LOG_DEBUG("UID is " << packet->GetUid());
+    NS_LOG_DEBUG("uid " << packet->GetUid());
     // NS_LOG_DEBUG("id is " << m_node->GetId());
 
     Mac48Address src48 = Mac48Address::ConvertFrom(src);

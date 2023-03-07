@@ -58,6 +58,14 @@ SnicWorkloadServer::~SnicWorkloadServer()
 }
 
 void
+SnicWorkloadServer::Reset()
+{
+    NS_LOG_FUNCTION_NOARGS();
+    m_numReceived = 0;
+    m_uids.clear();
+}
+
+void
 SnicWorkloadServer::DoDispose()
 {
     NS_LOG_FUNCTION(this);
@@ -153,12 +161,33 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
         m_rxTraceWithAddresses(packet, from, localAddress);
         if (InetSocketAddress::IsMatchingType(from))
         {
-            m_numReceived++;
             NS_LOG_INFO("At time " << Simulator::Now().As(Time::S) << " server received "
                                    << packet->GetSize() << " bytes from "
                                    << InetSocketAddress::ConvertFrom(from).GetIpv4() << " port "
                                    << InetSocketAddress::ConvertFrom(from).GetPort());
             uint32_t uid = packet->GetUid();
+            Time currentTime = Simulator::Now();
+            Time latency;
+            if (m_numReceived != 0)
+            {
+                latency = currentTime - m_lastPacket;
+                NS_LOG_INFO("lat: " << latency << " " << packet->GetSize());
+                m_lastTimes.push(latency);
+                m_avgTotal += latency;
+            }
+            m_lastPacket = currentTime;
+            // m_avgInterval += latency;
+            m_numReceived++;
+
+            if (m_numReceived > 10)
+            {
+                m_avgTotal -= m_lastTimes.front();
+                m_lastTimes.pop();
+                m_avgInterval = m_avgTotal / m_lastTimes.size();
+                NS_LOG_INFO("avg lat(" << m_lastTimes.size() << "): " << m_avgInterval);
+                NS_LOG_INFO("avg tput(5): " << 512.0 / m_avgInterval.GetNanoSeconds());
+                NS_LOG_INFO("avg int(5): " << m_avgInterval);
+            }
             NS_LOG_INFO("numReceived=" << m_numReceived << " uid:" << uid);
             m_uids.push_back(uid);
             std::ostringstream coll;
@@ -197,11 +226,11 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
         //<< Inet6SocketAddress::ConvertFrom(from).GetPort());
         //}
     }
-    NS_LOG_INFO("uids:");
-    for (auto i : m_uids)
-    {
-        NS_LOG_INFO("uid: " << i);
-    }
+    // NS_LOG_INFO("uids:");
+    // for (auto i : m_uids)
+    //{
+    // NS_LOG_INFO("uid: " << i);
+    //}
 }
 
 } // Namespace ns3

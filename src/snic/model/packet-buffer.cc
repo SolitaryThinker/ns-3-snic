@@ -39,7 +39,7 @@ PacketBuffer::GetTypeId()
                                           MakeUintegerChecker<uint32_t>())
                             .AddAttribute("PendingQueueSize",
                                           "The size of the queue for packets pending an arp reply.",
-                                          UintegerValue(300),
+                                          UintegerValue(1900),
                                           MakeUintegerAccessor(&PacketBuffer::m_pendingQueueSize),
                                           MakeUintegerChecker<uint32_t>());
     return tid;

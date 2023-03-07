@@ -391,9 +391,14 @@ SnicWorkloadClient::Send()
 
     if (m_sent < m_count)
     {
-        // Time nextInterval = m_interval_gen.NextInterval();
-        Time nextInterval = m_interval;
-        NS_LOG_INFO("scheduling transmit: " << nextInterval);
+        Time nextInterval = m_interval_gen.NextInterval();
+        // Time nextInterval = m_interval;
+        double tput = m_size / nextInterval.GetNanoSeconds();
+        NS_LOG_INFO("scheduling transmit tput: " << m_dataSize << ":"
+                                                 << nextInterval.GetNanoSeconds());
+        NS_LOG_INFO("scheduling transmit tput: " << nextInterval << "=" << tput);
+        // NS_LOG_INFO("scheduling transmit: " << nextInterval);
+
         ScheduleTransmit(nextInterval);
     }
 }
