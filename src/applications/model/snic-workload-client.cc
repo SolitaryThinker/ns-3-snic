@@ -55,6 +55,18 @@ SnicWorkloadClient::GetTypeId()
                           MakeUintegerAccessor(&SnicWorkloadClient::SetDataSize,
                                                &SnicWorkloadClient::GetDataSize),
                           MakeUintegerChecker<uint32_t>())
+            .AddAttribute("UseFlow",
+                          "Use flows in client"
+                          "nearest packet size",
+                          BooleanValue(false),
+                          MakeBooleanAccessor(&SnicWorkloadClient::m_useFlow),
+            .AddAttribute("FlowSize",
+                          "Size of flows in bytes before new flow is created. Rounded up to the "
+                          "nearest packet size",
+                          UintegerValue(1000),
+                          MakeUintegerAccessor(&SnicWorkloadClient::SetFlowSize,
+                                               &SnicWorkloadClient::GetFlowSize),
+                          MakeUintegerChecker<uint32_t>())
             .AddTraceSource("Tx",
                             "A new packet is created and is sent",
                             MakeTraceSourceAccessor(&SnicWorkloadClient::m_txTrace),
@@ -82,6 +94,11 @@ SnicWorkloadClient::SnicWorkloadClient()
     m_sendEvent = EventId();
     m_data = nullptr;
     m_dataSize = 0;
+
+    m_newFlow = true;
+    m_useFlow = false;
+    m_currentFlowSize = 0;
+    m_flowCount = 0;
 }
 
 SnicWorkloadClient::~SnicWorkloadClient()
@@ -209,6 +226,20 @@ SnicWorkloadClient::GetDataSize() const
 }
 
 void
+SnicWorkloadClient::SetFlowSize(uint32_t flowSize)
+{
+    NS_LOG_FUNCTION(this << flowSize);
+    m_flowSize = flowSize;
+}
+
+uint32_t
+SnicWorkloadClient::GetFlowSize() const
+{
+    NS_LOG_FUNCTION(this);
+    return m_flowSize;
+}
+
+void
 SnicWorkloadClient::SetFill(std::string fill)
 {
     NS_LOG_FUNCTION(this << fill);
@@ -332,6 +363,16 @@ SnicWorkloadClient::Send()
     *(int64_t*)buffer = 2;
     header.AddNT(5);
     header.SetPayload(buffer, 8);
+    if (m_useFlow)
+    {
+        if (m_newFlow)
+        {
+            header.SetNewFlow(true);
+            m_newFlow = false;
+            m_flowCount++;
+        }
+        m_currentFlowSize += m_size;
+    }
     p->AddHeader(header);
     Address localAddress;
     m_socket->GetSockName(localAddress);
@@ -391,6 +432,16 @@ SnicWorkloadClient::Send()
 
     if (m_sent < m_count)
     {
+        if (m_useFlow)
+        {
+            if (m_currentFlowSize > m_flowSize)
+            {
+                // new flow is needed
+                m_newFlow = true;
+                m_currentFlowSize = 0;
+                // nextInterval =
+            }
+        }
         Time nextInterval = m_interval_gen.NextInterval();
         // Time nextInterval = m_interval;
         double tput = m_size / nextInterval.GetNanoSeconds();

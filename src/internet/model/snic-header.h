@@ -141,6 +141,9 @@ class SnicHeader : public Header
     bool HasSeenNic() const;
     void SetHasSeenNic();
 
+    bool IsNewFlow() const;
+    void SetNewFlow(bool newFlow);
+
     uint16_t GetPacketType() const;
     void SetPacketType(uint16_t packetType);
 
@@ -292,6 +295,7 @@ class SnicHeader : public Header
     Address m_source;      //!< Source IP address
     Address m_destination; //!< Destination IP address
     uint8_t m_protocol;    //!< Protocol number
+    bool m_newFlow;
     uint16_t m_checksum;   //!< Forced Checksum value
     bool m_calcChecksum;   //!< Flag to calculate checksum
     bool m_goodChecksum;   //!< Flag to indicate that checksum is correct

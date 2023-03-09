@@ -509,6 +509,9 @@ class SnicNetDevice : public NetDevice
     std::vector<Address> m_connectedSnics;
     std::map<uint32_t, uint32_t> m_broadcastedPackets;
 
+    TracedValue<uint64_t> m_numSchedReqs;
+    TracedValue<uint64_t> m_numL4Packets;
+
     PacketBuffer m_packetBuffer;
   };
 }

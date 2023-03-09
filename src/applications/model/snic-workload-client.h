@@ -70,6 +70,9 @@ class SnicWorkloadClient : public Application
      */
     uint32_t GetDataSize() const;
 
+    void SetFlowSize(uint32_t flowSize);
+    uint32_t GetFlowSize() const;
+
     /**
      * Set the data fill of the packet (what is sent as data to the server) to
      * the zero-terminated contents of the fill string string.
@@ -146,6 +149,13 @@ class SnicWorkloadClient : public Application
 
     uint32_t m_dataSize; //!< packet payload size (must be equal to m_size)
     uint8_t* m_data;     //!< packet payload data
+
+    // tracks flows
+    uint32_t m_flowSize;
+    uint32_t m_flowCount;
+    uint32_t m_currentFlowSize;
+    bool m_useFlow;
+    bool m_newFlow;
 
     uint32_t m_sent;       //!< Counter for sent packets
     Ptr<Socket> m_socket;  //!< Socket

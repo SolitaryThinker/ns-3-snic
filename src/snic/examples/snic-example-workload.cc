@@ -11,6 +11,12 @@ using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("SnicExample");
 
+void
+IntTrace(uint64_t old, uint64_t newv)
+{
+    NS_LOG_DEBUG("traced " << old << " to " << newv);
+}
+
 /* two snics using snic apps and sockets */
 int
 main(int argc, char* argv[])
@@ -77,6 +83,8 @@ main(int argc, char* argv[])
     //   clientApps.Stop(Seconds(10.0));
 
     NS_LOG_INFO("Configure Tracing.");
+    NetDeviceContainer snics = ringHelper.GetSnics();
+    snics.Get(0)->TraceConnectWithoutContext("NumL4Packets", MakeCallback(&IntTrace));
 
     //
     // Configure tracing of all enqueue, dequeue, and NetDevice receive events.

@@ -48,7 +48,15 @@ SnicNetDevice::GetTypeId()
                           "Time it takes for learned MAC state entry to expire.",
                           TimeValue(Seconds(300)),
                           MakeTimeAccessor(&SnicNetDevice::m_expirationTime),
-                          MakeTimeChecker());
+                          MakeTimeChecker())
+            .AddTraceSource("NumSchedReqs",
+                            "Number of scheduler requests made by this NIC",
+                            MakeTraceSourceAccessor(&SnicNetDevice::m_numSchedReqs),
+                            "ns3::TracedValueCallback::UInt64")
+            .AddTraceSource("NumL4Packets",
+                            "Number of L4 packets seen by this NIC",
+                            MakeTraceSourceAccessor(&SnicNetDevice::m_numL4Packets),
+                            "ns3::TracedValueCallback::UInt64");
     //.AddAttribute("InterframeGap",
     //"The time to wait between packet (frame) transmissions",
     // TimeValue(Seconds(0.0)),
@@ -336,6 +344,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
     switch (snicHeader.GetPacketType())
     {
     case SnicHeader::L4_PACKET: {
+        m_numL4Packets++;
         if (addressedToUs)
         {
             NS_FATAL_ERROR("l4 packets shouldn't be addressed to snics");
@@ -365,7 +374,11 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                 NS_LOG_DEBUG("req sched ============");
                 FlowId flowId = FlowId(ipv4Header, snicHeader);
                 PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
-                // we have an entry here already, then we can set the seensnic
+                if (snicHeader.IsNewFlow())
+                {
+                    // flow id
+                }
+                // we have an entry here already, then we can set the sseensnic
                 // flag and forward the packet
                 //
                 // Otherwise we need to send a allocation request to the
