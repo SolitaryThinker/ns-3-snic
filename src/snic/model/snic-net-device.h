@@ -513,6 +513,8 @@ class SnicNetDevice : public NetDevice
     TracedValue<uint64_t> m_numL4Packets;
 
     PacketBuffer m_packetBuffer;
+
+    uint64_t m_currentFlowId;
   };
 }
 #endif // SNIC_NET_DEVICE_H

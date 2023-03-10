@@ -147,6 +147,9 @@ class SnicHeader : public Header
     uint16_t GetPacketType() const;
     void SetPacketType(uint16_t packetType);
 
+    void SetFlowId(uint64_t flowId);
+    uint64_t GetFlowId() const;
+
     /**
      * \brief Enable checksum calculation for SNIC
      */
@@ -296,6 +299,7 @@ class SnicHeader : public Header
     Address m_destination; //!< Destination IP address
     uint8_t m_protocol;    //!< Protocol number
     bool m_newFlow;
+    uint64_t m_flowId;
     uint16_t m_checksum;   //!< Forced Checksum value
     bool m_calcChecksum;   //!< Flag to calculate checksum
     bool m_goodChecksum;   //!< Flag to indicate that checksum is correct

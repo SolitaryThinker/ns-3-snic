@@ -70,7 +70,8 @@ SnicNetDevice::SnicNetDevice()
     : m_node(nullptr),
       m_ifIndex(0),
       m_mtu(0xffff),
-      m_isScheduler(false)
+      m_isScheduler(false),
+      m_currentFlowId(0)
 {
     NS_LOG_FUNCTION_NOARGS();
     m_channel = CreateObject<BridgeChannel>();
@@ -369,15 +370,18 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             }
             else
             {
+                // if we are forcing a new flow, then
+                // if (snicHeader.IsNewFlow())
+                //{
+                //// snicHeader.SetFlowId(m_currentFlowId++);
+                //// snicHeader.SetNewFlow(true);
+                //// flow id
+                //}
                 // TODO check if there exist an packet buffer entry already for
                 // this flow
-                NS_LOG_DEBUG("req sched ============");
                 FlowId flowId = FlowId(ipv4Header, snicHeader);
+                NS_LOG_DEBUG("req sched ============" << snicHeader.GetFlowId());
                 PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
-                if (snicHeader.IsNewFlow())
-                {
-                    // flow id
-                }
                 // we have an entry here already, then we can set the sseensnic
                 // flag and forward the packet
                 //
@@ -390,18 +394,19 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                         packet->AddHeader(snicHeader);
                         packet->AddHeader(ipv4Header);
                         entry->EnqueuePending(packet);
-                        NS_LOG_DEBUG("flow waitreply, enque");
+                        NS_LOG_DEBUG("flow waitreply, enqueue");
                     }
                     else
                     {
                         packet->AddHeader(snicHeader);
                         packet->AddHeader(ipv4Header);
-                        NS_LOG_DEBUG("flow not waitreply, enque");
+                        NS_LOG_DEBUG("flow not waitreply forward");
                         ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
                     }
                 }
                 else
                 {
+                    NS_LOG_DEBUG("flow not found, requesting");
                     packet->AddHeader(snicHeader);
                     packet->AddHeader(ipv4Header);
                     RequestAllocation(incomingPort, packet, protocol, src, dst);
@@ -422,6 +427,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
             return;
         }
+        m_numSchedReqs++;
         SnicSchedulerHeader schedHeader;
         packet->RemoveHeader(schedHeader);
 

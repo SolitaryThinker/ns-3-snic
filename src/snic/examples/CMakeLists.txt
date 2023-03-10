@@ -59,6 +59,15 @@ build_lib_example(
 )
 
 build_lib_example(
+    NAME snic-example-flow
+    SOURCE_FILES snic-example-flow.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)
+build_lib_example(
     NAME snic-example-workload
     SOURCE_FILES snic-example-workload.cc
     LIBRARIES_TO_LINK

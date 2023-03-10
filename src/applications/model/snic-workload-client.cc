@@ -1,5 +1,6 @@
 #include "snic-workload-client.h"
 
+#include "ns3/boolean.h"
 #include "ns3/inet-socket-address.h"
 #include "ns3/inet6-socket-address.h"
 #include "ns3/ipv4-address.h"
@@ -60,6 +61,7 @@ SnicWorkloadClient::GetTypeId()
                           "nearest packet size",
                           BooleanValue(false),
                           MakeBooleanAccessor(&SnicWorkloadClient::m_useFlow),
+                          MakeBooleanChecker())
             .AddAttribute("FlowSize",
                           "Size of flows in bytes before new flow is created. Rounded up to the "
                           "nearest packet size",
@@ -367,10 +369,14 @@ SnicWorkloadClient::Send()
     {
         if (m_newFlow)
         {
+            NS_LOG_INFO("new flow: " << m_currentFlow);
+            m_currentFlow = m_flowCount;
             header.SetNewFlow(true);
             m_newFlow = false;
             m_flowCount++;
         }
+        NS_LOG_INFO("flow: " << m_currentFlow << " " << m_currentFlowSize);
+        header.SetFlowId(m_currentFlow);
         m_currentFlowSize += m_size;
     }
     p->AddHeader(header);

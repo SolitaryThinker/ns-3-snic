@@ -16,7 +16,8 @@ class FlowId
            uint16_t srcPort,
            Ipv4Address dstIp,
            uint16_t dstPort,
-           uint16_t protocol);
+           uint16_t protocol,
+           uint64_t id);
     FlowId(const SnicSchedulerHeader& snicHeader);
     FlowId(const Ipv4Header& ipv4Header, const SnicHeader& snicHeader);
 
@@ -29,13 +30,14 @@ class FlowId
     uint16_t m_srcPort;
     uint16_t m_dstPort;
     uint16_t m_protocol;
+    uint64_t m_id;
 };
 
 inline bool
 operator==(const FlowId& a, const FlowId& b)
 {
     return (a.m_srcIp == b.m_srcIp && a.m_dstIp == b.m_dstIp && a.m_srcPort == b.m_srcPort &&
-            a.m_dstPort == b.m_dstPort && a.m_protocol == b.m_protocol);
+            a.m_dstPort == b.m_dstPort && a.m_protocol == b.m_protocol && a.m_id == b.m_id);
 }
 
 inline bool
@@ -47,7 +49,9 @@ operator!=(const FlowId& a, const FlowId& b)
 inline bool
 operator<(const FlowId& a, const FlowId& b)
 {
-    return (a.m_srcIp < b.m_srcIp);
+    // return (a.m_srcIp < b.m_srcIp);
+    return (a.m_srcIp < b.m_srcIp && a.m_dstIp < b.m_dstIp && a.m_srcPort < b.m_srcPort &&
+            a.m_dstPort < b.m_dstPort && a.m_protocol < b.m_protocol && a.m_id < b.m_id);
 }
 
 } // namespace ns3

@@ -25,7 +25,8 @@ class SnicSchedulerHeader : public Header
                         uint16_t srcPort,
                         Ipv4Address dstIp,
                         uint16_t dstPort,
-                        uint8_t protocol);
+                        uint8_t protocol,
+                        uint64_t flowId);
     SnicSchedulerHeader(Ipv4Header ipv4Header, SnicHeader snicHeader);
     ~SnicSchedulerHeader() override;
 
@@ -70,6 +71,9 @@ class SnicSchedulerHeader : public Header
     void SetProtocol(uint8_t protocol);
     uint8_t GetProtocol() const;
 
+    void SetFlowId(uint64_t flowId);
+    uint64_t GetFlowId() const;
+
     /**
      * \brief Get the type ID.
      * \return the object TypeId
@@ -108,6 +112,7 @@ class SnicSchedulerHeader : public Header
     Ipv4Address m_source;      //!< Source IP address
     Ipv4Address m_destination; //!< Destination IP address
     uint8_t m_protocol;    //!< Protocol number
+    uint64_t m_flowId;
 };
 
 } // namespace ns3

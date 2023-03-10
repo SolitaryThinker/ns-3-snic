@@ -25,7 +25,8 @@ SnicSchedulerHeader::SnicSchedulerHeader()
       m_sourcePort(0xfffd),
       m_destinationPort(0xfffd),
       m_packetType(0),
-      m_protocol(0)
+      m_protocol(0),
+      m_flowId(0)
 {
 }
 
@@ -33,7 +34,8 @@ SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp,
                                          uint16_t srcPort,
                                          Ipv4Address dstIp,
                                          uint16_t dstPort,
-                                         uint8_t protocol)
+                                         uint8_t protocol,
+                                         uint64_t flowId)
     : m_bandwidthDemand(0),
       m_resourceDemand(0),
       m_sourcePort(srcPort),
@@ -41,7 +43,8 @@ SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp,
       m_packetType(0),
       m_source(srcIp),
       m_destination(dstIp),
-      m_protocol(0)
+      m_protocol(protocol),
+      m_flowId(flowId)
 {
 }
 
@@ -51,7 +54,8 @@ SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Header ipv4Header, SnicHeader snicH
                         snicHeader.GetSourcePort(),
                         ipv4Header.GetDestination(),
                         snicHeader.GetDestinationPort(),
-                        ipv4Header.GetProtocol());
+                        ipv4Header.GetProtocol(),
+                        snicHeader.GetFlowId());
 }
 
 SnicSchedulerHeader::~SnicSchedulerHeader()
@@ -181,6 +185,18 @@ SnicSchedulerHeader::GetProtocol() const
     return m_protocol;
 }
 
+void
+SnicSchedulerHeader::SetFlowId(uint64_t flowId)
+{
+    m_flowId = flowId;
+}
+
+uint64_t
+SnicSchedulerHeader::GetFlowId() const
+{
+    return m_flowId;
+}
+
 TypeId
 SnicSchedulerHeader::GetTypeId()
 {
@@ -210,7 +226,7 @@ SnicSchedulerHeader::Print(std::ostream& os) const
 uint32_t
 SnicSchedulerHeader::GetSerializedSize() const
 {
-    return 54;
+    return 62;
 }
 
 void
@@ -230,6 +246,7 @@ SnicSchedulerHeader::Serialize(Buffer::Iterator start) const
     i.WriteHtonU32(m_source.Get());
     i.WriteHtonU32(m_destination.Get());
     i.WriteU8(m_protocol);
+    i.WriteHtonU64(m_flowId);
 }
 
 uint32_t
@@ -249,6 +266,7 @@ SnicSchedulerHeader::Deserialize(Buffer::Iterator start)
     m_source.Set(i.ReadNtohU32()); //!< Source IP address
     m_destination.Set(i.ReadNtohU32()); //!< Destination IP address
     m_protocol = i.ReadU8();            //!< Protocol number
+    m_flowId = i.ReadNtohU64();
 
     return GetSerializedSize();
 }

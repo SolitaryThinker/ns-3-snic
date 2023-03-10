@@ -154,6 +154,7 @@ class SnicWorkloadClient : public Application
     uint32_t m_flowSize;
     uint32_t m_flowCount;
     uint32_t m_currentFlowSize;
+    uint64_t m_currentFlow;
     bool m_useFlow;
     bool m_newFlow;
 

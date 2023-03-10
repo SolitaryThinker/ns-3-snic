@@ -247,6 +247,18 @@ SnicHeader::SetPacketType(uint16_t packetType)
 }
 
 void
+SnicHeader::SetFlowId(uint64_t flowId)
+{
+    m_flowId = flowId;
+}
+
+uint64_t
+SnicHeader::GetFlowId() const
+{
+    return m_flowId;
+}
+
+void
 SnicHeader::EnableChecksums()
 {
     m_calcChecksum = true;
@@ -415,7 +427,7 @@ SnicHeader::Print(std::ostream& os) const
 uint32_t
 SnicHeader::GetSerializedSize() const
 {
-    return 22;
+    return 30;
 }
 
 void
@@ -430,6 +442,7 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     i.WriteU8(m_hasSeenNic);
     i.WriteHtonU16(m_packetType);
     i.WriteU8(m_newFlow);
+    i.WriteHtonU64(m_flowId);
     if (m_payloadSize == 0)
     {
         i.WriteHtonU16(start.GetSize());
@@ -471,6 +484,7 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     m_hasSeenNic = i.ReadU8();
     m_packetType = i.ReadNtohU16();
     m_newFlow = i.ReadU8();
+    m_flowId = i.ReadNtohU64();
     m_payloadSize = i.ReadNtohU16() - GetSerializedSize();
     m_checksum = i.ReadU16();
 
