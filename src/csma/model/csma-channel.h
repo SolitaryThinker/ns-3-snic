@@ -326,6 +326,7 @@ class CsmaChannel : public Channel
      * free.)
      */
     Ptr<Packet> m_currentPkt;
+    std::vector<Ptr<Packet>> m_currentPkts;
 
     /**
      * Device Id of the source that is currently transmitting on the
@@ -333,11 +334,13 @@ class CsmaChannel : public Channel
      * channel, if the channel is currently not busy.
      */
     uint32_t m_currentSrc;
+    std::vector<uint32_t> m_currentSrcs;
 
     /**
      * Current state of the channel
      */
     WireState m_state;
+    std::vector<WireState> m_states;
 };
 
 } // namespace ns3
