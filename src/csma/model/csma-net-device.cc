@@ -501,7 +501,9 @@ CsmaNetDevice::TransmitStart()
             m_backoff.IncrNumRetries();
             Time backoffTime = m_backoff.GetBackoffTime();
 
-            NS_LOG_LOGIC("Channel busy, backing off for " << backoffTime.As(Time::S));
+            // NS_LOG_LOGIC("Channel busy, backing off for "
+            //<< backoffTime.As(Time::S));
+            NS_LOG_LOGIC("Channel busy, backing off for " << backoffTime.GetNanoSeconds() << "ns");
 
             Simulator::Schedule(backoffTime, &CsmaNetDevice::TransmitStart, this);
         }
@@ -672,6 +674,7 @@ CsmaNetDevice::Attach(Ptr<CsmaChannel> ch)
     // We use the Ethernet interframe gap of 96 bit times.
     //
     // m_tInterframeGap = m_bps.CalculateBytesTxTime(96 / 8);
+    // m_tInterframeGap = m_bps.CalculateBytesTxTime(8 / 8);
     m_tInterframeGap = NanoSeconds(0.96);
 
     //

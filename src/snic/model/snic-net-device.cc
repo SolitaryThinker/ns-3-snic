@@ -49,10 +49,10 @@ SnicNetDevice::GetTypeId()
                           TimeValue(Seconds(300)),
                           MakeTimeAccessor(&SnicNetDevice::m_expirationTime),
                           MakeTimeChecker())
-            .AddTraceSource("NumSchedReqs",
+            .AddTraceSource("SchedTrace",
                             "Number of scheduler requests made by this NIC",
-                            MakeTraceSourceAccessor(&SnicNetDevice::m_numSchedReqs),
-                            "ns3::TracedValueCallback::UInt64")
+                            MakeTraceSourceAccessor(&SnicNetDevice::m_schedTrace),
+                            "ns3::SnicNetDevice::SchedTracedCallback")
             .AddTraceSource("NumL4Packets",
                             "Number of L4 packets seen by this NIC",
                             MakeTraceSourceAccessor(&SnicNetDevice::m_numL4Packets),
@@ -206,6 +206,12 @@ SnicNetDevice::GetNumNT()
     return m_nts.size();
 }
 
+uint64_t
+SnicNetDevice::GetNumSchedReqs() const
+{
+    return m_numSchedReqs;
+}
+
 void
 SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
                                  Ptr<Packet> packet,
@@ -221,12 +227,20 @@ SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
     SnicHeader snicHeader;
     copy->RemoveHeader(ipv4Header);
     copy->RemoveHeader(snicHeader);
-    SnicSchedulerHeader schedHeader = SnicSchedulerHeader(ipv4Header, snicHeader);
+    SnicSchedulerHeader schedHeader;
+    // NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetFlowId());
+    // NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetDestinationIp());
 
     schedHeader.SetBandwidthDemand(10);
     schedHeader.SetResourceDemand(5);
     schedHeader.AddNT(5);
     schedHeader.SetPacketType(SnicSchedulerHeader::ALLOCATION_REQUEST);
+    schedHeader.SetFlowId(snicHeader.GetFlowId());
+    schedHeader.SetSourceIp(ipv4Header.GetSource());
+    schedHeader.SetDestinationIp(ipv4Header.GetDestination());
+    schedHeader.SetSourcePort(snicHeader.GetSourcePort());
+    schedHeader.SetDestinationPort(snicHeader.GetDestinationPort());
+    schedHeader.SetProtocol(snicHeader.GetProtocol());
 
     ipv4Header.SetDestination(m_schedulerAddress);
     ipv4Header.SetSource(m_ipAddress);
@@ -236,8 +250,10 @@ SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
     request->AddHeader(schedHeader);
     request->AddHeader(snicHeader);
     request->AddHeader(ipv4Header);
+    NS_LOG_DEBUG("flowid in snicheader: " << snicHeader.GetFlowId());
+    NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetFlowId());
     // create new flow to track packets
-    FlowId flowId = FlowId(schedHeader);
+    FlowId flowId(schedHeader);
     // make the flow known to the packet cache
     PacketBuffer::Entry* entry = m_packetBuffer.Add(flowId);
     entry->SetIncomingPort(incomingPort);
@@ -379,8 +395,9 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                 //}
                 // TODO check if there exist an packet buffer entry already for
                 // this flow
-                FlowId flowId = FlowId(ipv4Header, snicHeader);
+                FlowId flowId(ipv4Header, snicHeader);
                 NS_LOG_DEBUG("req sched ============" << snicHeader.GetFlowId());
+                NS_LOG_DEBUG("req sched ============" << flowId.GetId());
                 PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
                 // we have an entry here already, then we can set the sseensnic
                 // flag and forward the packet
@@ -428,6 +445,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             return;
         }
         m_numSchedReqs++;
+        m_schedTrace(this, packet);
         SnicSchedulerHeader schedHeader;
         packet->RemoveHeader(schedHeader);
 
@@ -475,7 +493,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         packet->RemoveHeader(schedHeader);
         NS_LOG_DEBUG("got response");
         // get flowid from response packet
-        FlowId flowId = FlowId(schedHeader);
+        FlowId flowId(schedHeader);
         // find entry in packet buffer
         PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
         if (entry)

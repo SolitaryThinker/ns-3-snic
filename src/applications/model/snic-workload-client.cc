@@ -369,7 +369,8 @@ SnicWorkloadClient::Send()
     {
         if (m_newFlow)
         {
-            NS_LOG_INFO("new flow: " << m_currentFlow);
+            NS_LOG_INFO("new flow: " << m_currentFlow
+                                     << "at time=" << Simulator::Now().GetNanoSeconds());
             m_currentFlow = m_flowCount;
             header.SetNewFlow(true);
             m_newFlow = false;
@@ -448,8 +449,8 @@ SnicWorkloadClient::Send()
                 // nextInterval =
             }
         }
-        Time nextInterval = m_interval_gen.NextInterval();
-        // Time nextInterval = m_interval;
+        // Time nextInterval = m_interval_gen.NextInterval();
+        Time nextInterval = m_interval;
         double tput = m_size / nextInterval.GetNanoSeconds();
         NS_LOG_INFO("scheduling transmit tput: " << m_dataSize << ":"
                                                  << nextInterval.GetNanoSeconds());

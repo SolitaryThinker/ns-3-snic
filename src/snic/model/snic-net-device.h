@@ -90,6 +90,7 @@ class SnicNetDevice : public NetDevice
     void RemoveNT(uint32_t id);
     Ptr<NetworkTask> GetNT(uint32_t id);
     uint32_t GetNumNT();
+    uint64_t GetNumSchedReqs() const;
 
     void RequestAllocation(Ptr<NetDevice> incomingPort,
                            Ptr<Packet> packet,
@@ -233,6 +234,7 @@ class SnicNetDevice : public NetDevice
      * \returns the port the source is associated to, or NULL if no association is known.
      */
     Ptr<NetDevice> GetLearnedState(Mac48Address source);
+    typedef void (*SchedTracedCallback)(Ptr<const SnicNetDevice>, Ptr<const Packet>);
 
   private:
     static const uint16_t IPV4_PROT_NUMBER = 0x0800; //!< Protocol number (0x0800)
@@ -511,6 +513,7 @@ class SnicNetDevice : public NetDevice
 
     TracedValue<uint64_t> m_numSchedReqs;
     TracedValue<uint64_t> m_numL4Packets;
+    ns3::TracedCallback<Ptr<const SnicNetDevice>, Ptr<const Packet>> m_schedTrace;
 
     PacketBuffer m_packetBuffer;
 

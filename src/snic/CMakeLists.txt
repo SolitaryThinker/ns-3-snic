@@ -22,6 +22,7 @@ build_lib(
                  utils/flow.cc
                  utils/packet-arrival-rate-gen.cc
                  utils/ring-topology.cc
+                 utils/statistic.cc
                  #model/snic-channel.cc
                  helper/snic-helper.cc
     HEADER_FILES model/snic-net-device.h
@@ -33,6 +34,7 @@ build_lib(
                  utils/flow.h
                  utils/packet-arrival-rate-gen.h
                  utils/ring-topology.h
+                 utils/statistic.h
                  #model/snic-header.h
                  #model/snic-channel.h
                  helper/snic-helper.h

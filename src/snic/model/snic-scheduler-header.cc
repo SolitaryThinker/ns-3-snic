@@ -28,6 +28,7 @@ SnicSchedulerHeader::SnicSchedulerHeader()
       m_protocol(0),
       m_flowId(0)
 {
+    NS_LOG_FUNCTION(this);
 }
 
 SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp,
@@ -46,16 +47,23 @@ SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Address srcIp,
       m_protocol(protocol),
       m_flowId(flowId)
 {
+    NS_LOG_FUNCTION(this << flowId);
+    m_flowId = flowId;
+    NS_LOG_FUNCTION(this << m_flowId);
 }
 
 SnicSchedulerHeader::SnicSchedulerHeader(Ipv4Header ipv4Header, SnicHeader snicHeader)
+    : m_bandwidthDemand(0),
+      m_resourceDemand(0),
+      m_sourcePort(snicHeader.GetSourcePort()),
+      m_destinationPort(snicHeader.GetDestinationPort()),
+      m_packetType(0),
+      m_source(ipv4Header.GetSource()),
+      m_destination(ipv4Header.GetDestination()),
+      m_protocol(ipv4Header.GetProtocol()),
+      m_flowId(snicHeader.GetFlowId())
 {
-    SnicSchedulerHeader(ipv4Header.GetSource(),
-                        snicHeader.GetSourcePort(),
-                        ipv4Header.GetDestination(),
-                        snicHeader.GetDestinationPort(),
-                        ipv4Header.GetProtocol(),
-                        snicHeader.GetFlowId());
+    NS_LOG_FUNCTION(this);
 }
 
 SnicSchedulerHeader::~SnicSchedulerHeader()
@@ -194,6 +202,7 @@ SnicSchedulerHeader::SetFlowId(uint64_t flowId)
 uint64_t
 SnicSchedulerHeader::GetFlowId() const
 {
+    NS_LOG_FUNCTION(this << m_flowId);
     return m_flowId;
 }
 
@@ -232,6 +241,7 @@ SnicSchedulerHeader::GetSerializedSize() const
 void
 SnicSchedulerHeader::Serialize(Buffer::Iterator start) const
 {
+    NS_LOG_FUNCTION_NOARGS();
     Buffer::Iterator i = start;
 
     i.WriteHtonU32(m_bandwidthDemand);
@@ -252,6 +262,7 @@ SnicSchedulerHeader::Serialize(Buffer::Iterator start) const
 uint32_t
 SnicSchedulerHeader::Deserialize(Buffer::Iterator start)
 {
+    NS_LOG_FUNCTION_NOARGS();
     Buffer::Iterator i = start;
     m_bandwidthDemand = i.ReadNtohU32();
     m_resourceDemand = i.ReadNtohU32();

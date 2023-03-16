@@ -10,11 +10,36 @@
 using namespace ns3;
 
 NS_LOG_COMPONENT_DEFINE("SnicExample");
+uint64_t totalSchedPackets = 0;
+Time prev;
 
 void
-IntTrace(uint64_t old, uint64_t newv)
+IntTrace(std::string context, uint64_t old, uint64_t newv)
 {
-    NS_LOG_DEBUG("traced req" << old << " to " << newv);
+    NS_LOG_DEBUG("traced req " << context << " " << old << " to " << newv);
+    Time now = Simulator::Now();
+    NS_LOG_DEBUG("sim time: " << now - prev);
+    prev = now;
+
+
+    totalSchedPackets = newv;
+}
+
+Statistic schedStat;
+
+void
+SchedTraceC(std::string context, Ptr<const SnicNetDevice> dev, Ptr<const Packet> pkt)
+{
+    NS_LOG_DEBUG(context << " isSched=" << dev->IsScheduler()
+                         << " numSchedReq=" << dev->GetNumSchedReqs());
+}
+
+void
+SchedTrace(Ptr<const SnicNetDevice> dev, Ptr<const Packet> pkt)
+{
+    NS_LOG_DEBUG("isSched=" << dev->IsScheduler() << " numSchedReq=" << dev->GetNumSchedReqs()
+                            << " " << pkt->GetUid());
+    schedStat.AddPacket(pkt->GetSize());
 }
 
 /* two snics using snic apps and sockets */
@@ -25,7 +50,10 @@ main(int argc, char* argv[])
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
+    //  LogComponentEnable("FlowId", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
+    LogComponentEnable("Statistic", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
@@ -37,8 +65,8 @@ main(int argc, char* argv[])
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //    LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_LOGIC);
 
@@ -87,7 +115,8 @@ main(int argc, char* argv[])
     NS_LOG_INFO("Configure Tracing.");
     NetDeviceContainer snics = ringHelper.GetSnics();
     // snics.Get(0)->TraceConnectWithoutContext("NumL4Packets", MakeCallback(&IntTrace));
-    snics.Get(0)->TraceConnectWithoutContext("NumSchedReqs", MakeCallback(&IntTrace));
+    snics.Get(0)->TraceConnectWithoutContext("SchedTrace", MakeCallback(&SchedTrace));
+    // snics.Get(0)->TraceConnect("SchedTrace", MakeCallback(&SchedTraceC));
 
     //
     // Configure tracing of all enqueue, dequeue, and NetDevice receive events.
@@ -110,6 +139,8 @@ main(int argc, char* argv[])
     Simulator::Run();
     Simulator::Destroy();
     NS_LOG_INFO("Done.");
+
+    NS_LOG_INFO("totalSchedPackets: " << totalSchedPackets);
 
     return 0;
 }

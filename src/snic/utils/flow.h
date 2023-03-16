@@ -3,6 +3,7 @@
 
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv4-header.h"
+//#include "ns3/object.h"
 #include "ns3/snic-header.h"
 #include "ns3/snic-scheduler-header.h"
 
@@ -20,6 +21,11 @@ class FlowId
            uint64_t id);
     FlowId(const SnicSchedulerHeader& snicHeader);
     FlowId(const Ipv4Header& ipv4Header, const SnicHeader& snicHeader);
+
+    uint64_t GetId() const
+    {
+        return m_id;
+    }
 
   private:
     friend bool operator==(const FlowId& a, const FlowId& b);
@@ -50,8 +56,9 @@ inline bool
 operator<(const FlowId& a, const FlowId& b)
 {
     // return (a.m_srcIp < b.m_srcIp);
-    return (a.m_srcIp < b.m_srcIp && a.m_dstIp < b.m_dstIp && a.m_srcPort < b.m_srcPort &&
-            a.m_dstPort < b.m_dstPort && a.m_protocol < b.m_protocol && a.m_id < b.m_id);
+    return (a.m_id < b.m_id);
+    // return (a.m_srcIp < b.m_srcIp && a.m_dstIp < b.m_dstIp && a.m_srcPort < b.m_srcPort &&
+    // a.m_dstPort < b.m_dstPort && a.m_protocol < b.m_protocol && a.m_id < b.m_id);
 }
 
 } // namespace ns3
