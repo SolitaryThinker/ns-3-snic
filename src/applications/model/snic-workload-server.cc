@@ -181,11 +181,14 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
 
             if (m_numReceived > 10)
             {
+                uint32_t packetSize = packet->GetSize();
                 m_avgTotal -= m_lastTimes.front();
                 m_lastTimes.pop();
                 m_avgInterval = m_avgTotal / m_lastTimes.size();
                 NS_LOG_INFO("avg lat(" << m_lastTimes.size() << "): " << m_avgInterval);
-                NS_LOG_INFO("avg tput(5): " << 512.0 / m_avgInterval.GetNanoSeconds());
+                NS_LOG_INFO("pktsize " << packetSize);
+                NS_LOG_INFO("avg tput(5): " << (double)(packetSize * 8) /
+                                                   m_avgInterval.GetNanoSeconds());
                 NS_LOG_INFO("avg int(5): " << m_avgInterval);
             }
             NS_LOG_INFO("numReceived=" << m_numReceived << " uid:" << uid);

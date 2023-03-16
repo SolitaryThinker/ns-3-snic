@@ -479,7 +479,7 @@ CsmaNetDevice::TransmitStart()
     // Now we have to sense the state of the medium and either start transmitting
     // if it is idle, or backoff our transmission if someone else is on the wire.
     //
-    if (m_channel->GetState() != IDLE)
+    if (m_channel->GetState(m_deviceId) != IDLE)
     {
         //
         // The channel is busy -- backoff and rechedule TransmitStart() unless
@@ -597,7 +597,7 @@ CsmaNetDevice::TransmitCompleteEvent()
     //
     NS_ASSERT_MSG(m_txMachineState == BUSY,
                   "CsmaNetDevice::transmitCompleteEvent(): Must be BUSY if transmitting");
-    NS_ASSERT(m_channel->GetState() == TRANSMITTING);
+    NS_ASSERT(m_channel->GetState(m_deviceId) == TRANSMITTING);
     m_txMachineState = GAP;
 
     //
@@ -608,11 +608,11 @@ CsmaNetDevice::TransmitCompleteEvent()
     NS_LOG_LOGIC("m_currentPkt=" << m_currentPkt);
     NS_LOG_LOGIC("Pkt UID is " << m_currentPkt->GetUid() << ")");
 
-    m_channel->TransmitEnd();
+    m_channel->TransmitEnd(m_deviceId);
     m_phyTxEndTrace(m_currentPkt);
     m_currentPkt = nullptr;
 
-    NS_LOG_LOGIC("Schedule TransmitReadyEvent in " << m_tInterframeGap.As(Time::S));
+    NS_LOG_LOGIC("Schedule TransmitReadyEvent in " << m_tInterframeGap.GetNanoSeconds() << "ns");
 
     Simulator::Schedule(m_tInterframeGap, &CsmaNetDevice::TransmitReadyEvent, this);
 }
@@ -674,8 +674,8 @@ CsmaNetDevice::Attach(Ptr<CsmaChannel> ch)
     // We use the Ethernet interframe gap of 96 bit times.
     //
     // m_tInterframeGap = m_bps.CalculateBytesTxTime(96 / 8);
-    // m_tInterframeGap = m_bps.CalculateBytesTxTime(8 / 8);
-    m_tInterframeGap = NanoSeconds(0.96);
+    m_tInterframeGap = m_bps.CalculateBytesTxTime(8 / 8);
+    // m_tInterframeGap = NanoSeconds(0.96);
 
     //
     // This device is up whenever a channel is attached to it.

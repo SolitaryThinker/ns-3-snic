@@ -50,6 +50,7 @@ main(int argc, char* argv[])
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
+    LogComponentEnable("CsmaChannel", LOG_LEVEL_LOGIC);
     // LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("FlowId", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
@@ -95,7 +96,7 @@ main(int argc, char* argv[])
     SnicWorkloadClientHelper workloadClient(interfaces.GetAddress(0), 9);
     workloadClient.SetAttribute("MaxPackets", UintegerValue(490));
     workloadClient.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
-    workloadClient.SetAttribute("PacketSize", UintegerValue(512));
+    workloadClient.SetAttribute("PacketSize", UintegerValue(64));
     workloadClient.SetAttribute("UseFlow", BooleanValue(true));
     workloadClient.SetAttribute("FlowSize", UintegerValue(5000));
 

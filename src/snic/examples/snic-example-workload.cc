@@ -67,7 +67,7 @@ main(int argc, char* argv[])
     SnicWorkloadClientHelper echoClient2(interfaces.GetAddress(0), 9);
     echoClient2.SetAttribute("MaxPackets", UintegerValue(490));
     echoClient2.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
-    echoClient2.SetAttribute("PacketSize", UintegerValue(512));
+    echoClient2.SetAttribute("PacketSize", UintegerValue(64));
 
     // ApplicationContainer clientApps = echoClient2.Install(terminals.Get(2));
     ApplicationContainer clientApps2 = echoClient2.Install(terminals.Get(4));

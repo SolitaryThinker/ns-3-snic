@@ -204,7 +204,7 @@ class CsmaChannel : public Channel
      * \return Returns true unless the source was detached before it
      * completed its transmission.
      */
-    bool TransmitEnd();
+    bool TransmitEnd(uint32_t deviceId);
 
     /**
      * \brief Indicates that the channel has finished propagating the
@@ -213,7 +213,7 @@ class CsmaChannel : public Channel
      * Calls the receive function of every active net device that is
      * attached to the channel.
      */
-    void PropagationCompleteEvent();
+    void PropagationCompleteEvent(uint32_t deviceId);
 
     /**
      * \return Returns the device number assigned to a net device by the
@@ -228,7 +228,7 @@ class CsmaChannel : public Channel
      * \return Returns the state of the channel (IDLE -- free,
      * TRANSMITTING -- busy, PROPAGATING - busy )
      */
-    WireState GetState();
+    WireState GetState(uint32_t deviceId);
 
     /**
      * \brief Indicates if the channel is busy. The channel will only
@@ -237,7 +237,7 @@ class CsmaChannel : public Channel
      * \return Returns true if the channel is busy and false if it is
      * free.
      */
-    bool IsBusy();
+    bool IsBusy(uint32_t deviceId);
 
     /**
      * \brief Indicates if a net device is currently attached or
