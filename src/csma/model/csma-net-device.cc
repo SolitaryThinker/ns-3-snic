@@ -612,7 +612,7 @@ CsmaNetDevice::TransmitCompleteEvent()
     m_phyTxEndTrace(m_currentPkt);
     m_currentPkt = nullptr;
 
-    NS_LOG_LOGIC("Schedule TransmitReadyEvent in " << m_tInterframeGap.GetNanoSeconds() << "ns");
+    NS_LOG_LOGIC("Schedule TransmitReadyEvent in " << m_tInterframeGap.GetPicoSeconds() << "ps");
 
     Simulator::Schedule(m_tInterframeGap, &CsmaNetDevice::TransmitReadyEvent, this);
 }

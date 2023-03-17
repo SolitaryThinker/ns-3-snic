@@ -176,6 +176,7 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
                 m_avgTotal += latency;
             }
             m_lastPacket = currentTime;
+            NS_LOG_INFO("cur time: " << currentTime.GetNanoSeconds());
             // m_avgInterval += latency;
             m_numReceived++;
 

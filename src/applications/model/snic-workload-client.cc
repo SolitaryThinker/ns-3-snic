@@ -451,7 +451,7 @@ SnicWorkloadClient::Send()
         }
         // Time nextInterval = m_interval_gen.NextInterval();
         Time nextInterval = m_interval;
-        double tput = m_size / nextInterval.GetNanoSeconds();
+        double tput = (8 * m_size) / nextInterval.GetNanoSeconds();
         NS_LOG_INFO("scheduling transmit tput: " << m_dataSize << ":"
                                                  << nextInterval.GetNanoSeconds());
         NS_LOG_INFO("scheduling transmit tput: " << nextInterval << "=" << tput);
