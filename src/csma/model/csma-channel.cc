@@ -48,7 +48,7 @@ CsmaChannel::GetTypeId()
                 MakeDataRateChecker())
             .AddAttribute("Delay",
                           "Transmission delay through the channel",
-                          TimeValue(NanoSeconds(1)),
+                          TimeValue(Seconds(0)),
                           MakeTimeAccessor(&CsmaChannel::m_delay),
                           MakeTimeChecker());
     return tid;

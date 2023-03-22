@@ -69,6 +69,14 @@ SnicWorkloadClient::GetTypeId()
                           MakeUintegerAccessor(&SnicWorkloadClient::SetFlowSize,
                                                &SnicWorkloadClient::GetFlowSize),
                           MakeUintegerChecker<uint32_t>())
+            .AddAttribute(
+                "FlowPktCount",
+                "Size of flows in numbe of packets before new flow is created. Rounded up to the "
+                "nearest packet size",
+                UintegerValue(10),
+                MakeUintegerAccessor(&SnicWorkloadClient::SetFlowPktCount,
+                                     &SnicWorkloadClient::GetFlowPktCount),
+                MakeUintegerChecker<uint32_t>())
             .AddTraceSource("Tx",
                             "A new packet is created and is sent",
                             MakeTraceSourceAccessor(&SnicWorkloadClient::m_txTrace),
@@ -100,6 +108,7 @@ SnicWorkloadClient::SnicWorkloadClient()
     m_newFlow = true;
     m_useFlow = false;
     m_currentFlowSize = 0;
+    m_currentFlowPkt = 0;
     m_flowCount = 0;
 }
 
@@ -242,6 +251,20 @@ SnicWorkloadClient::GetFlowSize() const
 }
 
 void
+SnicWorkloadClient::SetFlowPktCount(uint32_t pktCount)
+{
+    NS_LOG_FUNCTION(this << pktCount);
+    m_flowPktCount = pktCount;
+}
+
+uint32_t
+SnicWorkloadClient::GetFlowPktCount() const
+{
+    NS_LOG_FUNCTION(this);
+    return m_flowPktCount;
+}
+
+void
 SnicWorkloadClient::SetFill(std::string fill)
 {
     NS_LOG_FUNCTION(this << fill);
@@ -376,9 +399,11 @@ SnicWorkloadClient::Send()
             m_newFlow = false;
             m_flowCount++;
         }
-        NS_LOG_INFO("flow: " << m_currentFlow << " " << m_currentFlowSize);
+        NS_LOG_INFO("flow_id=:" << m_currentFlow << " m_currentFlowSize=" << m_currentFlowSize
+                                << "m_currentpkt=" << m_currentFlowPkt);
         header.SetFlowId(m_currentFlow);
         m_currentFlowSize += m_size;
+        m_currentFlowPkt++;
     }
     p->AddHeader(header);
     Address localAddress;
@@ -441,11 +466,13 @@ SnicWorkloadClient::Send()
     {
         if (m_useFlow)
         {
-            if (m_currentFlowSize > m_flowSize)
+            // if (m_currentFlowSize > m_flowSize)
+            if (m_currentFlowPkt > m_flowPktCount)
             {
                 // new flow is needed
                 m_newFlow = true;
                 m_currentFlowSize = 0;
+                m_currentFlowPkt = 0;
                 // nextInterval =
             }
         }

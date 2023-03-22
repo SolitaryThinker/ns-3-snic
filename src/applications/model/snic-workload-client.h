@@ -73,6 +73,9 @@ class SnicWorkloadClient : public Application
     void SetFlowSize(uint32_t flowSize);
     uint32_t GetFlowSize() const;
 
+    void SetFlowPktCount(uint32_t pktCount);
+    uint32_t GetFlowPktCount() const;
+
     /**
      * Set the data fill of the packet (what is sent as data to the server) to
      * the zero-terminated contents of the fill string string.
@@ -152,9 +155,11 @@ class SnicWorkloadClient : public Application
 
     // tracks flows
     uint32_t m_flowSize;
+    uint32_t m_flowPktCount;
     uint32_t m_flowCount;
     uint32_t m_currentFlowSize;
     uint64_t m_currentFlow;
+    uint64_t m_currentFlowPkt;
     bool m_useFlow;
     bool m_newFlow;
 

@@ -28,7 +28,7 @@ NS_LOG_COMPONENT_DEFINE("Backoff");
 
 Backoff::Backoff()
 {
-    m_slotTime = MicroSeconds(1);
+    m_slotTime = NanoSeconds(1);
     m_minSlots = 1;
     m_maxSlots = 1000;
     m_ceiling = 10;

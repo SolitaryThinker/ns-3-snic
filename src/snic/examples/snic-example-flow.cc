@@ -78,7 +78,7 @@ main(int argc, char* argv[])
 
     Time::SetResolution(Time::NS);
 
-    RingTopologyHelper ringHelper = RingTopologyHelper(5, 1, 0);
+    RingTopologyHelper ringHelper = RingTopologyHelper(2, 1, 0);
 
     NodeContainer terminals = ringHelper.GetTerminals();
 
@@ -94,14 +94,16 @@ main(int argc, char* argv[])
     serverApps2.Stop(Seconds(20.0));
 
     SnicWorkloadClientHelper workloadClient(interfaces.GetAddress(0), 9);
-    workloadClient.SetAttribute("MaxPackets", UintegerValue(490));
+    workloadClient.SetAttribute("MaxPackets", UintegerValue(14490));
     workloadClient.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
-    workloadClient.SetAttribute("PacketSize", UintegerValue(64));
+    workloadClient.SetAttribute("PacketSize", UintegerValue(450));
+    // workloadClient.SetAttribute("PacketSize", UintegerValue(9));
     workloadClient.SetAttribute("UseFlow", BooleanValue(true));
-    workloadClient.SetAttribute("FlowSize", UintegerValue(5000));
+    workloadClient.SetAttribute("FlowSize", UintegerValue(900));
+    workloadClient.SetAttribute("FlowPktCount", UintegerValue(50));
 
     // ApplicationContainer clientApps = workloadClient.Install(terminals.Get(2));
-    ApplicationContainer clientApps2 = workloadClient.Install(terminals.Get(4));
+    ApplicationContainer clientApps2 = workloadClient.Install(terminals.Get(1));
     clientApps2.Start(Seconds(2.0));
     // clientApps2.Stop(Seconds(3.0));
 

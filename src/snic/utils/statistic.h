@@ -19,6 +19,9 @@ namespace ns3
         std::string m_label;
         Time m_prev;
         double m_tput;
+        double m_total_tput;
+        uint64_t m_count;
+        bool m_first;
     };
 }
 

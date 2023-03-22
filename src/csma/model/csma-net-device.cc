@@ -503,7 +503,8 @@ CsmaNetDevice::TransmitStart()
 
             // NS_LOG_LOGIC("Channel busy, backing off for "
             //<< backoffTime.As(Time::S));
-            NS_LOG_LOGIC("Channel busy, backing off for " << backoffTime.GetNanoSeconds() << "ns");
+            NS_LOG_LOGIC("Channel busy, backing off for " << backoffTime.GetNanoSeconds() << "ns"
+                                                          << " dev: " << m_deviceId);
 
             Simulator::Schedule(backoffTime, &CsmaNetDevice::TransmitStart, this);
         }
