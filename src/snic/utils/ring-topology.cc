@@ -67,8 +67,8 @@ RingTopologyHelper::RingTopologyHelper(uint32_t nSnics, uint32_t nHosts, uint32_
     //}
 
     // add TOR switch
-    // NodeContainer torSwitchNode;
-    // torSwitchNode.Create(1);
+    NodeContainer torSwitchNode;
+    torSwitchNode.Create(1);
     // add scheduler nic
 
     // snicHelper.AddPort(m_snics.Get(1), snicLink.Get(1));
