@@ -27,7 +27,8 @@ SnicScheduler::GetTypeId()
 
 SnicScheduler::SnicScheduler()
     : m_device(nullptr),
-      m_initialized(false)
+      m_initialized(false),
+      m_allocationCount(0)
 {
     NS_LOG_FUNCTION(this);
 }
@@ -128,20 +129,25 @@ SnicScheduler::PopulateStaticRoutes()
 {
     NS_LOG_FUNCTION_NOARGS();
 
-    for (ListOfSVertex_t::iterator s_it = m_nicVertices.begin(); s_it != m_nicVertices.end();
-         ++s_it)
+    // for (ListOfSVertex_t::iterator s_it = m_nicVertices.begin(); s_it != m_nicVertices.end();
+    //++s_it)
+    for (uint32_t srcIdx = 0; srcIdx < m_nicVertices.size(); srcIdx++)
     {
-        // if ((*s_it)->GetVertexType() == SVertex::VertexTypeHost)
-        // continue;
-        for (ListOfSVertex_t::iterator d_it = m_nicVertices.begin(); d_it != m_nicVertices.end();
-             ++d_it)
+        SVertex* src = m_nicVertices[srcIdx];
+        if (m_allPaths.count(src) == 0)
+            m_allPaths[src] = std::map<SVertex*, std::vector<Path_t>>();
+        // for (ListOfSVertex_t::iterator d_it = m_nicVertices.begin(); d_it != m_nicVertices.end();
+        //++d_it)
+        for (uint32_t dstIdx = srcIdx; dstIdx < m_nicVertices.size(); dstIdx++)
         {
             // if ((*d_it)->GetVertexType() == SVertex::VertexTypeHost)
             // continue;
-            if (s_it != d_it)
+            if (srcIdx != dstIdx)
             {
-                SVertex* src = *s_it;
-                SVertex* dst = *d_it;
+                SVertex* dst = m_nicVertices[dstIdx];
+                NS_LOG_DEBUG("find routes between: ");
+                NS_LOG_DEBUG(*src);
+                NS_LOG_DEBUG(*dst);
                 // XXX
                 DepthFirstTraversal(src, dst, 10);
             }
@@ -174,19 +180,19 @@ SnicScheduler::Initialize()
         // Ptr<GlobalRouter> rtr = node->GetObject<GlobalRouter>();
     }
 
-    NS_LOG_DEBUG("all vertices: ");
+    NS_LOG_DEBUG("\n=====all vertices: ");
     for (ListOfSVertex_t::iterator i = m_vertices.begin(); i != m_vertices.end(); i++)
     {
         NS_LOG_DEBUG("\tvertex: " << **i);
     }
 
-    NS_LOG_DEBUG("all nic vertices: ");
+    NS_LOG_DEBUG("\n=====all nic vertices: ");
     for (ListOfSVertex_t::iterator i = m_nicVertices.begin(); i != m_nicVertices.end(); i++)
     {
         NS_LOG_DEBUG("\tvertex: " << **i);
     }
 
-    NS_LOG_DEBUG("all host vertices: ");
+    NS_LOG_DEBUG("\n=====all host vertices: ");
     for (ListOfSVertex_t::iterator i = m_hostVertices.begin(); i != m_hostVertices.end(); i++)
     {
         NS_LOG_DEBUG("\tvertex: " << **i);
@@ -232,33 +238,56 @@ SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
     // int length = 0;
     //  Path_t path;
 
-    std::stack<SVertex*> path;
+    // path.push(root);
 
     while (!s.empty())
     {
         SVertex* v = s.top();
         s.pop();
-        // path.push_back(v);
         //  we found a path
         // hops(
         if (v == dst)
         {
+            std::vector<SVertex*> reverse_path;
+            std::stack<SVertex*> path;
             // paths.push_back(path);
             // path.clear();
             std::stack<SVertex*> copy = s;
             NS_LOG_DEBUG("found");
+            NS_LOG_DEBUG(*v);
+            reverse_path.push_back(v);
+            path.push(v);
             while (!copy.empty())
             {
                 SVertex* i = copy.top();
-                copy.pop();
                 NS_LOG_DEBUG(*i);
+                reverse_path.push_back(i);
+                path.push(i);
+                copy.pop();
             }
+            NS_LOG_DEBUG(*src);
+            reverse_path.push_back(src);
+            path.push(src);
+
+            m_allPaths[dst][src].push_back(reverse_path);
+
+            std::vector<SVertex*> forward_path;
+            NS_LOG_DEBUG("actual path: ");
+            while (!path.empty())
+            {
+                SVertex* i = path.top();
+                forward_path.push_back(i);
+                NS_LOG_DEBUG(*i);
+                path.pop();
+            }
+            m_allPaths[src][dst].push_back(forward_path);
+            NS_LOG_DEBUG("done with printing");
             return;
         }
         if (visited.count(v) == 0)
         {
             visited[v] = 1;
-            path.push(v);
+            // path.push(v);
         }
 
         for (SVertex::ListOfSVertex_t::iterator it = v->m_vertices.begin();
@@ -284,6 +313,7 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     if (!m_initialized)
     {
         Initialize();
+        DumpAllPaths();
     }
     m_allocationCount++;
     NS_LOG_DEBUG("allocationCount: " << m_allocationCount);
@@ -316,6 +346,38 @@ uint64_t
 SnicScheduler::GetAlllocationCount() const
 {
     return m_allocationCount;
+}
+
+void
+SnicScheduler::DumpAllPaths() const
+{
+    NS_LOG_FUNCTION(this);
+    NS_LOG_DEBUG("Dumping all paths: ");
+    for (auto src_it = m_allPaths.begin(); src_it != m_allPaths.end(); ++src_it)
+    {
+        NS_LOG_DEBUG("\tSrc: \n" << *src_it->first);
+        const auto& dsts = src_it->second;
+        for (auto dst_it = dsts.begin(); dst_it != dsts.end(); ++dst_it)
+        {
+            NS_LOG_DEBUG("\tDst: \n" << *dst_it->first);
+            const auto& paths = dst_it->second;
+            for (auto path_it = paths.begin(); path_it != paths.end(); ++path_it)
+            {
+                DumpPath(*path_it);
+            }
+        }
+    }
+}
+
+void
+SnicScheduler::DumpPath(const std::vector<SVertex*>& path) const
+{
+    NS_LOG_FUNCTION(this);
+    NS_LOG_DEBUG("path: ");
+    for (uint32_t i = 0; i < path.size(); ++i)
+    {
+        NS_LOG_DEBUG("\t\t" << *path[i]);
+    }
 }
 
 // ---------------------------------------------------------------------------

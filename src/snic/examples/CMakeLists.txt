@@ -87,3 +87,13 @@ build_lib_example(
         ${libcsma}
         ${libinternet}
 )
+
+build_lib_example(
+    NAME snic-sched
+    SOURCE_FILES snic-sched.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)

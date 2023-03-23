@@ -63,6 +63,8 @@ class SnicScheduler : public Object
     void Release(SnicSchedulerHeader& snicHeader);
 
     uint64_t GetAlllocationCount() const;
+    void DumpAllPaths() const;
+    void DumpPath(const std::vector<SVertex*>& path) const;
 
   protected:
     void AddNode(Ptr<Node> node);
@@ -80,7 +82,7 @@ class SnicScheduler : public Object
     std::map<Ptr<Node>, SVertex*> m_addedNodes;
 
     typedef std::vector<SVertex*> Path_t;
-    std::map<SVertex*, std::map<SVertex*, std::vector<Path_t>>> allPaths;
+    std::map<SVertex*, std::map<SVertex*, std::vector<Path_t>>> m_allPaths;
     // topology
     // active flow table
     // map<FlowId, Allocation> m_activeFlows;
