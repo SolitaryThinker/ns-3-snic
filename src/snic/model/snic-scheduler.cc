@@ -227,14 +227,20 @@ SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
     NS_LOG_FUNCTION(this << src << dst << limit);
 
     std::map<SVertex*, int> visited;
-    SVertex* root = m_vertices[0];
+    SVertex* root = src;
+
+    NS_ASSERT(src->GetVertexType() == SVertex::VertexTypeNic);
+    NS_ASSERT(dst->GetVertexType() == SVertex::VertexTypeNic);
 
     // std::vector<Path_t>& paths = allPaths[src][dst];
+    typedef std::pair<SVertex*, std::vector<SVertex*>> s_t;
 
-    std::stack<SVertex*> s;
+    std::stack<s_t> s;
 
-    visited[root] = 1;
-    s.push(root);
+    // visited[root] = 1;
+    std::vector<SVertex*> t;
+    t.push_back(root);
+    s.push(std::make_pair(root, t));
     // int length = 0;
     //  Path_t path;
 
@@ -242,63 +248,46 @@ SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
 
     while (!s.empty())
     {
-        SVertex* v = s.top();
+        SVertex* v = s.top().first;
+        std::vector<SVertex*> p = s.top().second;
+
         s.pop();
-        //  we found a path
-        // hops(
         if (v == dst)
         {
-            std::vector<SVertex*> reverse_path;
-            std::stack<SVertex*> path;
-            // paths.push_back(path);
-            // path.clear();
-            std::stack<SVertex*> copy = s;
             NS_LOG_DEBUG("found");
-            NS_LOG_DEBUG(*v);
-            reverse_path.push_back(v);
-            path.push(v);
-            while (!copy.empty())
+            for (uint32_t i = 0; i < p.size(); ++i)
             {
-                SVertex* i = copy.top();
-                NS_LOG_DEBUG(*i);
-                reverse_path.push_back(i);
-                path.push(i);
-                copy.pop();
+                NS_LOG_DEBUG(*p[i]);
             }
-            NS_LOG_DEBUG(*src);
-            reverse_path.push_back(src);
-            path.push(src);
+            auto reverse_path = p;
+            std::reverse(reverse_path.begin(), reverse_path.end());
 
             m_allPaths[dst][src].push_back(reverse_path);
-
-            std::vector<SVertex*> forward_path;
-            NS_LOG_DEBUG("actual path: ");
-            while (!path.empty())
-            {
-                SVertex* i = path.top();
-                forward_path.push_back(i);
-                NS_LOG_DEBUG(*i);
-                path.pop();
-            }
-            m_allPaths[src][dst].push_back(forward_path);
-            NS_LOG_DEBUG("done with printing");
-            return;
+            m_allPaths[src][dst].push_back(p);
+            // NS_LOG_DEBUG("done with printing");
+            // return;
+            continue;
         }
-        if (visited.count(v) == 0)
+        if (visited.count(v) == 1)
         {
-            visited[v] = 1;
-            // path.push(v);
+            continue;
         }
+        visited[v] = 1;
 
+        // NS_LOG_DEBUG("finding neighbors for: " << *v);
         for (SVertex::ListOfSVertex_t::iterator it = v->m_vertices.begin();
              it != v->m_vertices.end();
              ++it)
         {
             SVertex* neighbor = *it;
             if (neighbor->GetVertexType() == SVertex::VertexTypeHost)
+            {
                 continue;
-            if (visited.count(neighbor) == 0)
-                s.push(neighbor);
+            }
+            // NS_LOG_DEBUG("pushing: " << *neighbor);
+            auto copy = p;
+            copy.push_back(neighbor);
+            s.push(std::make_pair(neighbor, copy));
         }
     }
 }

@@ -78,7 +78,7 @@ main(int argc, char* argv[])
 
     Time::SetResolution(Time::NS);
 
-    RingTopologyHelper ringHelper = RingTopologyHelper(2, 1, 0);
+    RingTopologyHelper ringHelper = RingTopologyHelper(3, 1, 0);
 
     NodeContainer terminals = ringHelper.GetTerminals();
 
