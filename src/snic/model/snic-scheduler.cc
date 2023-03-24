@@ -316,8 +316,14 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     // std::vector<std::vector<int>>
     //  we compute all paths between each pair
     //  m_node->GetDevice
+    //
+    //
     //   uint32_t bandwidthRequested;
     //   Ipv4Address Destination;
+    //   NTs requested
+    //   throughput for NTs?
+    //   ingress/egress/area/memory
+    //
     /*
      *
      * for each node there are a set of devices connected. we follow that until
