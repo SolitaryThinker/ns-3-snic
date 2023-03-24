@@ -12,11 +12,13 @@
 
 namespace ns3
 {
-
+class SEdge;
 class SVertex
 {
   public:
     friend class SnicScheduler;
+    friend class SEdge;
+
     enum VertexType
     {
         VertexTypeUnknown = 0, /**< Uninitialized Link Record */
@@ -35,6 +37,9 @@ class SVertex
     Ptr<Node> GetNode() const;
     int GetVertexType() const;
 
+  protected:
+    void AddEdge(SEdge* edge, SVertex* other);
+
   private:
     typedef std::list<SVertex*> ListOfSVertex_t;
     friend std::ostream& operator<<(std::ostream& os, const SVertex& vertex);
@@ -42,8 +47,32 @@ class SVertex
     Ipv4Address m_vertexId;
     Ptr<Node> m_node;
 
+    typedef std::list<SEdge*> ListOfSEdge_t;
     ListOfSVertex_t m_vertices;
     bool m_vertexProcessed;
+    ListOfSEdge_t m_edges;
+    std::map<SVertex*, SEdge*> m_edgeMap;
+};
+
+class SEdge
+{
+  public:
+    friend class SnicScheduler;
+    friend class SVertex;
+
+    SEdge();
+    void SetVertices(SVertex* left, SVertex* right);
+    void SetLVertex(SVertex* v);
+    void SetRVertex(SVertex* v);
+
+  private:
+    SVertex* m_leftVertex;
+    SVertex* m_rightVertex;
+    Ptr<Channel> m_channel;
+    double m_consumedBandwidth;
+    double m_remainingBandwidth;
+    // FIXME
+    std::map<SVertex*, double> m_allocatedBandwidth;
 };
 
 class SnicScheduler : public Object
@@ -70,6 +99,9 @@ class SnicScheduler : public Object
     void AddNode(Ptr<Node> node);
     void DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit);
     void PopulateStaticRoutes();
+    void InitializeResources();
+
+    SVertex* GetVertexFromIp(const Ipv4Address& ip) const;
 
   private:
     Ptr<NetDevice> m_device;
@@ -81,12 +113,30 @@ class SnicScheduler : public Object
     ListOfSVertex_t m_hostVertices;
     std::map<Ptr<Node>, SVertex*> m_addedNodes;
 
+    typedef std::vector<SEdge*> ListOfSEdge_t;
+    ListOfSEdge_t m_edges;
+
     typedef std::vector<SVertex*> Path_t;
     std::map<SVertex*, std::map<SVertex*, std::vector<Path_t>>> m_allPaths;
     // topology
     // active flow table
     // map<FlowId, Allocation> m_activeFlows;
     uint64_t m_allocationCount;
+
+    enum ResourceType
+    {
+        FPGA = 0,
+        INGRESS,
+        EGRESS,
+        MEMORY
+    };
+
+    // indexed by resource
+    std::map<uint8_t, double> m_resourceConsumed;
+    // indexed by vertex
+    std::map<SVertex*, std::map<uint8_t, double>> m_resourceAllocated;
+    // indexed by resource
+    std::map<uint8_t, double> m_resourceRemaining;
 };
 
 std::ostream& operator<<(std::ostream& os, const SVertex& vertex);

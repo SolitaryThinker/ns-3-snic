@@ -111,7 +111,13 @@ SnicScheduler::AddNode(Ptr<Node> node)
                 Ptr<Node> nextNode = d->GetNode();
                 NS_LOG_DEBUG("\t\t csma node: " << nextNode);
                 AddNode(nextNode);
-                v->AddVertex(m_addedNodes[nextNode]);
+                SVertex* nextVertex = m_addedNodes[nextNode];
+
+                SEdge* edge = new SEdge();
+                edge->SetVertices(v, nextVertex);
+                m_edges.push_back(edge);
+                v->AddEdge(edge, nextVertex);
+                v->AddVertex(nextVertex);
             }
 
             // see if we are attached to other csma netdevs
@@ -205,6 +211,38 @@ SnicScheduler::Initialize()
     // NS_FATAL_ERROR("done init");
     PopulateStaticRoutes();
 
+    InitializeResources();
+}
+
+void
+SnicScheduler::InitializeResources()
+{
+    NS_LOG_FUNCTION_NOARGS();
+    m_resourceRemaining[FPGA] = 100;
+    m_resourceRemaining[INGRESS] = 100;
+    m_resourceRemaining[EGRESS] = 100;
+    m_resourceRemaining[MEMORY] = 100;
+
+    m_resourceConsumed[FPGA] = 0;
+    m_resourceConsumed[INGRESS] = 0;
+    m_resourceConsumed[EGRESS] = 0;
+    m_resourceConsumed[MEMORY] = 0;
+}
+
+SVertex*
+SnicScheduler::GetVertexFromIp(const Ipv4Address& ip) const
+{
+    SVertex* res = nullptr;
+    for (ListOfSVertex_t::const_iterator it = m_vertices.begin(); it != m_vertices.end(); ++it)
+    {
+        SVertex* v = *it;
+        if (v->GetVertexId() == ip)
+        {
+            res = v;
+        }
+    }
+
+    return res;
 }
 
 void
@@ -306,6 +344,25 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     }
     m_allocationCount++;
     NS_LOG_DEBUG("allocationCount: " << m_allocationCount);
+    Ipv4Address srcIp = snicHeader.GetSourceIp();
+    Ipv4Address dstIp = snicHeader.GetDestinationIp();
+    NS_LOG_DEBUG("src: " << srcIp);
+    NS_LOG_DEBUG("dest: " << dstIp);
+
+    SVertex* src = GetVertexFromIp(srcIp);
+    SVertex* dst = GetVertexFromIp(dstIp);
+    NS_ASSERT_MSG(src, "src not found");
+    NS_ASSERT_MSG(dst, "dst not found");
+
+    // sort list of routes
+    // create a graph that includes edges
+    // track resources using edges
+    // exclude routes based on edges
+    // pick next shortest route
+    //
+    // create routing headers
+    // attach to headers
+    // return response
 
     // while (!q.empty())
     //{
@@ -438,6 +495,13 @@ SVertex::GetVertexType() const
     return m_vertexType;
 }
 
+void
+SVertex::AddEdge(SEdge* edge, SVertex* other)
+{
+    m_edges.push_back(edge);
+    m_edgeMap[other] = edge;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const SVertex& vertex)
 {
@@ -456,5 +520,38 @@ operator<<(std::ostream& os, const SVertex& vertex)
     os << "===========";
 
     return os;
+}
+
+// ---------------------------------------------------------------------------
+//
+// SEdge Implementation
+//
+// ---------------------------------------------------------------------------
+SEdge::SEdge()
+    : m_leftVertex(nullptr),
+      m_rightVertex(nullptr),
+      m_channel(nullptr),
+      m_consumedBandwidth(0),
+      m_remainingBandwidth(0)
+{
+}
+
+void
+SEdge::SetVertices(SVertex* left, SVertex* right)
+{
+    SetLVertex(left);
+    SetRVertex(right);
+}
+
+void
+SEdge::SetLVertex(SVertex* v)
+{
+    m_leftVertex = v;
+}
+
+void
+SEdge::SetRVertex(SVertex* v)
+{
+    m_rightVertex = v;
 }
 } // namespace ns3
