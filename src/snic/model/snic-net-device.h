@@ -19,6 +19,7 @@
 #include "ns3/log.h"
 #include "ns3/mac48-address.h"
 #include "ns3/node.h"
+#include "ns3/nstime.h"
 #include "ns3/simulator.h"
 #include "ns3/snic-module.h"
 #include "ns3/string.h"
@@ -234,6 +235,13 @@ class SnicNetDevice : public NetDevice
      * \returns the port the source is associated to, or NULL if no association is known.
      */
     Ptr<NetDevice> GetLearnedState(Mac48Address source);
+
+    void PipelinedSendFrom(Ptr<NetDevice> port,
+                           Ptr<Packet> packet,
+                           const Address& src,
+                           const Address& dst,
+                           uint16_t protocol);
+
     typedef void (*SchedTracedCallback)(Ptr<const SnicNetDevice>, Ptr<const Packet>);
 
   private:
@@ -518,6 +526,9 @@ class SnicNetDevice : public NetDevice
     PacketBuffer m_packetBuffer;
 
     uint64_t m_currentFlowId;
+
+    uint32_t m_numInPipeline = 0;
+    uint32_t m_pipelineLength = 0;
   };
 }
 #endif // SNIC_NET_DEVICE_H

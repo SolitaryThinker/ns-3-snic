@@ -10,6 +10,7 @@
 #include "ns3/header.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv6-address.h"
+#include "ns3/nstime.h"
 
 #include <stdint.h>
 #include <string>
@@ -149,6 +150,9 @@ class SnicHeader : public Header
 
     void SetFlowId(uint64_t flowId);
     uint64_t GetFlowId() const;
+
+    void AddDelay(Time t);
+    Time GetDelay() const;
 
     /**
      * \brief Enable checksum calculation for SNIC
@@ -304,6 +308,9 @@ class SnicHeader : public Header
     bool m_calcChecksum;   //!< Flag to calculate checksum
     bool m_goodChecksum;   //!< Flag to indicate that checksum is correct
     std::list<SnicRte> m_rteList;
+
+    // NOTE Not serialized
+    Time m_delay;
 };
 
 } // namespace ns3

@@ -21,7 +21,11 @@ class NetworkTask : public Object
     ~NetworkTask();
 
     virtual void ProcessHeader(SnicHeader& header) = 0;
-    // private:
+
+  private:
+    DataRate m_ingressBps;
+    DataRate m_egressBps;
+    double m_memoryRequirement;
 };
 
 } // namespace ns3

@@ -171,7 +171,8 @@ SnicHeader::SnicHeader()
       m_newFlow(false),
       m_checksum(0),
       m_calcChecksum(false),
-      m_goodChecksum(true)
+      m_goodChecksum(true),
+      m_delay(0)
 {
 }
 
@@ -256,6 +257,18 @@ uint64_t
 SnicHeader::GetFlowId() const
 {
     return m_flowId;
+}
+
+void
+SnicHeader::AddDelay(Time t)
+{
+    m_delay += t;
+}
+
+Time
+SnicHeader::GetDelay() const
+{
+    return m_delay;
 }
 
 void

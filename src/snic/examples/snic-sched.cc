@@ -49,11 +49,11 @@ main(int argc, char* argv[])
     bool verbose = true;
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
-    LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("CsmaChannel", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
-    //  LogComponentEnable("FlowId", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("CsmaChannel", LOG_LEVEL_LOGIC);
+    //  LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
+    //   LogComponentEnable("FlowId", LOG_LEVEL_LOGIC);
+    //  LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
     LogComponentEnable("Statistic", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
@@ -62,7 +62,7 @@ main(int argc, char* argv[])
     // LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
     // LogComponentEnable("ArpCache", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("SnicStackHelper", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //    LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);

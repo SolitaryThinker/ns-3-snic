@@ -472,7 +472,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         responseIpv4Header.SetSource(ipv4Header.GetDestination());
         responseIpv4Header.SetDestination(ipv4Header.GetSource());
         NS_LOG_DEBUG("creating response");
-        NS_ASSERT_MSG(false, "debugging scheduler");
+        // NS_ASSERT_MSG(false, "debugging scheduler");
         NS_LOG_DEBUG("old src: " << ipv4Header.GetSource());
         NS_LOG_DEBUG("old dest: " << ipv4Header.GetDestination());
 
@@ -713,7 +713,8 @@ SnicNetDevice::ForwardUnicast(Ptr<NetDevice> incomingPort,
     {
         NS_LOG_LOGIC("Learning bridge state says to use port `"
                      << outPort->GetInstanceTypeId().GetName() << "'");
-        outPort->SendFrom(packet->Copy(), src, dst, protocol);
+        PipelinedSendFrom(outPort, packet->Copy(), src, dst, protocol);
+        // outPort->SendFrom(packet->Copy(), src, dst, protocol);
     }
     else
     {
@@ -729,7 +730,8 @@ SnicNetDevice::ForwardUnicast(Ptr<NetDevice> incomingPort,
                              << "): " << incomingPort->GetInstanceTypeId().GetName() << " --> "
                              << port->GetInstanceTypeId().GetName() << " (UID " << packet->GetUid()
                              << ").");
-                port->SendFrom(packet->Copy(), src, dst, protocol);
+                // port->SendFrom(packet->Copy(), src, dst, protocol);
+                PipelinedSendFrom(port, packet->Copy(), src, dst, protocol);
             }
         }
     }
@@ -758,7 +760,8 @@ SnicNetDevice::ForwardBroadcast(Ptr<NetDevice> incomingPort,
                                                  << incomingPort->GetInstanceTypeId().GetName()
                                                  << " --> " << port->GetInstanceTypeId().GetName()
                                                  << " (UID " << packet->GetUid() << ").");
-            port->SendFrom(packet->Copy(), src, dst, protocol);
+            // port->SendFrom(packet->Copy(), src, dst, protocol);
+            PipelinedSendFrom(port, packet->Copy(), src, dst, protocol);
         }
     }
 }
@@ -797,6 +800,41 @@ SnicNetDevice::GetLearnedState(Mac48Address source)
         }
     }
     return nullptr;
+}
+
+void
+SnicNetDevice::PipelinedSendFrom(Ptr<NetDevice> port,
+                                 Ptr<Packet> packet,
+                                 const Address& src,
+                                 const Address& dst,
+                                 uint16_t protocol)
+{
+    NS_LOG_FUNCTION(this);
+    Ipv4Header ipv4Header;
+    SnicHeader snicHeader;
+    // int size = packet->RemoveHeader(ipv4Header);
+    // NS_LOG_DEBUG("size: " << size);
+    //  packet->PeekHeader(ipv4Header);
+    // packet->AddHeader(ipv4Header);
+    //    Time delay = snicHeader.GetDelay();
+
+    // Time now = Simulator::Now();
+
+    // m_pipelineLength = 16;
+    // m_numInPipeline++;
+    //  NS_LOG_DEBUG("delay=" << delay << " inPipe=" << m_numInPipeline);
+
+    // if (m_numInPipeline >= 16)
+    //{
+    //  NS_
+    //}
+    // port->SendFrom(packet, src, dst, protocol);
+
+    // m_pipeline.push(
+    Time delay = NanoSeconds(64);
+
+    NS_LOG_DEBUG("scheduling packet send in: " << delay);
+    Simulator::Schedule(delay, &NetDevice::SendFrom, port, packet, src, dst, protocol);
 }
 
 void
@@ -930,7 +968,8 @@ SnicNetDevice::SendFrom(Ptr<Packet> packet,
         Ptr<NetDevice> outPort = GetLearnedState(dst);
         if (outPort)
         {
-            outPort->SendFrom(packet, source, dest, protocolNumber);
+            // outPort->SendFrom(packet, source, dest, protocolNumber);
+            PipelinedSendFrom(outPort, packet, source, dest, protocolNumber);
             return true;
         }
     }
@@ -943,7 +982,8 @@ SnicNetDevice::SendFrom(Ptr<Packet> packet,
     {
         pktCopy = packet->Copy();
         Ptr<NetDevice> port = *iter;
-        port->SendFrom(pktCopy, source, dest, protocolNumber);
+        // port->SendFrom(pktCopy, source, dest, protocolNumber);
+        PipelinedSendFrom(port, pktCopy, source, dest, protocolNumber);
     }
 
     return true;
