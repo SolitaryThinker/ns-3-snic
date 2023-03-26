@@ -472,7 +472,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         responseIpv4Header.SetSource(ipv4Header.GetDestination());
         responseIpv4Header.SetDestination(ipv4Header.GetSource());
         NS_LOG_DEBUG("creating response");
-        // NS_ASSERT_MSG(false, "debugging scheduler");
+        NS_ASSERT_MSG(false, "debugging scheduler");
         NS_LOG_DEBUG("old src: " << ipv4Header.GetSource());
         NS_LOG_DEBUG("old dest: " << ipv4Header.GetDestination());
 
