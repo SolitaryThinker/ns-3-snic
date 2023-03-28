@@ -230,8 +230,10 @@ SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
     SnicSchedulerHeader schedHeader;
     // NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetFlowId());
     // NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetDestinationIp());
+    NS_ASSERT_MSG(snicHeader.IsNewFlow(), "is not new flow!");
 
-    schedHeader.SetBandwidthDemand(10);
+    schedHeader.SetBandwidthDemand(snicHeader.GetTput());
+    // schedHeader.SetBandwidthDemand(20.55);
     schedHeader.SetResourceDemand(5);
     schedHeader.AddNT(5);
     schedHeader.SetPacketType(SnicSchedulerHeader::ALLOCATION_REQUEST);
@@ -356,6 +358,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
     packet->RemoveHeader(snicHeader);
     NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
     NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
+    NS_LOG_DEBUG("\tpackettype?: " << snicHeader.GetPacketType());
     // packet->AddHeader(
 
     switch (snicHeader.GetPacketType())
@@ -578,7 +581,10 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     // NS_LOG_DEBUG("packetType is " << packetType);
     SnicHeader snicHeader;
     Ptr<Packet> copypkt = packet->Copy();
-    copypkt->RemoveHeader(snicHeader);
+    // NS_LOG_DEBUG("test2");
+    // copypkt->RemoveHeader(snicHeader);
+    // packet->PeekHeader(snicHeader);
+    // NS_LOG_DEBUG("test");
     std::ostringstream coll;
 
     packet->Print(coll);
@@ -589,6 +595,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
 
     if (!m_promiscRxCallback.IsNull())
     {
+        NS_LOG_DEBUG("calling callback");
         m_promiscRxCallback(this, packet, protocol, src, dst, packetType);
     }
     // bool isOurAddress = IsOurAddress(dst48);
@@ -831,7 +838,7 @@ SnicNetDevice::PipelinedSendFrom(Ptr<NetDevice> port,
     // port->SendFrom(packet, src, dst, protocol);
 
     // m_pipeline.push(
-    Time delay = NanoSeconds(64);
+    Time delay = NanoSeconds(0);
 
     NS_LOG_DEBUG("scheduling packet send in: " << delay);
     Simulator::Schedule(delay, &NetDevice::SendFrom, port, packet, src, dst, protocol);

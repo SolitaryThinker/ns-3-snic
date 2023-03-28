@@ -145,6 +145,12 @@ class SnicHeader : public Header
     bool IsNewFlow() const;
     void SetNewFlow(bool newFlow);
 
+    bool IsLastInFlow() const;
+    void SetIsLastInFlow(bool last);
+
+    double GetTput() const;
+    void SetTput(double tput);
+
     uint16_t GetPacketType() const;
     void SetPacketType(uint16_t packetType);
 
@@ -303,6 +309,8 @@ class SnicHeader : public Header
     Address m_destination; //!< Destination IP address
     uint8_t m_protocol;    //!< Protocol number
     bool m_newFlow;
+    bool m_isLastInFlow;
+    double m_tput;
     uint64_t m_flowId;
     uint16_t m_checksum;   //!< Forced Checksum value
     bool m_calcChecksum;   //!< Flag to calculate checksum

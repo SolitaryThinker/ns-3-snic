@@ -30,8 +30,8 @@ class SnicSchedulerHeader : public Header
     SnicSchedulerHeader(Ipv4Header ipv4Header, SnicHeader snicHeader);
     ~SnicSchedulerHeader() override;
 
-    void SetBandwidthDemand(uint32_t demand);
-    uint32_t GetBandwidthDemand() const;
+    void SetBandwidthDemand(double demand);
+    double GetBandwidthDemand() const;
 
     void SetResourceDemand(uint32_t demand);
     uint32_t GetResourceDemand() const;
@@ -100,7 +100,7 @@ class SnicSchedulerHeader : public Header
      * \param size packet size
      * \returns the checksum
      */
-    uint32_t m_bandwidthDemand;
+    double m_bandwidthDemand;
     uint32_t m_resourceDemand;
     uint16_t m_numNetworkTask;
     uint16_t m_nt;

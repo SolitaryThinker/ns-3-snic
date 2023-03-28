@@ -169,6 +169,8 @@ SnicHeader::SnicHeader()
       m_packetType(0),
       m_payloadSize(0),
       m_newFlow(false),
+      m_isLastInFlow(false),
+      m_tput(0),
       m_checksum(0),
       m_calcChecksum(false),
       m_goodChecksum(true),
@@ -232,7 +234,31 @@ SnicHeader::IsNewFlow() const
 void
 SnicHeader::SetNewFlow(bool newFlow)
 {
-    m_hasSeenNic = newFlow;
+    m_newFlow = newFlow;
+}
+
+bool
+SnicHeader::IsLastInFlow() const
+{
+    return m_isLastInFlow;
+}
+
+void
+SnicHeader::SetIsLastInFlow(bool last)
+{
+    m_isLastInFlow = last;
+}
+
+double
+SnicHeader::GetTput() const
+{
+    return m_tput;
+}
+
+void
+SnicHeader::SetTput(double tput)
+{
+    m_tput = tput;
 }
 
 uint16_t
@@ -432,15 +458,16 @@ SnicHeader::GetInstanceTypeId() const
 void
 SnicHeader::Print(std::ostream& os) const
 {
-    os << "packetType: " << m_packetType << " seenSnic: " << m_hasSeenNic << " snic_nt: " << m_nt
-       << ", payload: " << m_payload << ", snic_length: " << m_payloadSize + GetSerializedSize()
-       << " " << m_sourcePort << " > " << m_destinationPort;
+    os << "packetType: " << m_packetType << " flowId=" << m_flowId << " newflow=" << m_newFlow
+       << " seenSnic: " << m_hasSeenNic << " snic_nt: " << m_nt << ", payload: " << m_payload
+       << ", snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
+       << m_destinationPort;
 }
 
 uint32_t
 SnicHeader::GetSerializedSize() const
 {
-    return 30;
+    return 39;
 }
 
 void
@@ -454,7 +481,11 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     i.WriteHtonU64(m_payload);
     i.WriteU8(m_hasSeenNic);
     i.WriteHtonU16(m_packetType);
+    NS_LOG_DEBUG("serialize m_newFlow=" << m_newFlow);
     i.WriteU8(m_newFlow);
+    i.WriteU8(m_isLastInFlow);
+    // i.WriteHtonU64(m_tput);
+    i.Write((uint8_t*)&m_tput, 8);
     i.WriteHtonU64(m_flowId);
     if (m_payloadSize == 0)
     {
@@ -497,6 +528,10 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     m_hasSeenNic = i.ReadU8();
     m_packetType = i.ReadNtohU16();
     m_newFlow = i.ReadU8();
+    NS_LOG_DEBUG("deserial m_newFlow=" << m_newFlow);
+    m_isLastInFlow = i.ReadU8();
+    // m_tput = i.ReadNtohU64();
+    i.Read((uint8_t*)&m_tput, 8);
     m_flowId = i.ReadNtohU64();
     m_payloadSize = i.ReadNtohU16() - GetSerializedSize();
     m_checksum = i.ReadU16();

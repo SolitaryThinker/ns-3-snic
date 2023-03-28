@@ -1,6 +1,8 @@
 #ifndef SNIC_SCHEDULER_H
 #define SNIC_SCHEDULER_H
 
+#include "ns3/csma-module.h"
+#include "ns3/data-rate.h"
 #include "ns3/node.h"
 #include "ns3/object.h"
 #include "ns3/ptr.h"
@@ -37,17 +39,21 @@ class SVertex
     Ptr<Node> GetNode() const;
     int GetVertexType() const;
 
+    SVertex* GetConnectedVertex(uint32_t id) const;
+
+    SEdge* GetEdgeTo(SVertex* v);
+
   protected:
     void AddEdge(SEdge* edge, SVertex* other);
 
   private:
-    typedef std::list<SVertex*> ListOfSVertex_t;
+    typedef std::vector<SVertex*> ListOfSVertex_t;
     friend std::ostream& operator<<(std::ostream& os, const SVertex& vertex);
     VertexType m_vertexType;
     Ipv4Address m_vertexId;
     Ptr<Node> m_node;
 
-    typedef std::list<SEdge*> ListOfSEdge_t;
+    typedef std::vector<SEdge*> ListOfSEdge_t;
     ListOfSVertex_t m_vertices;
     bool m_vertexProcessed;
     ListOfSEdge_t m_edges;
@@ -65,13 +71,24 @@ class SEdge
     void SetLVertex(SVertex* v);
     void SetRVertex(SVertex* v);
 
+    SVertex* GetLVertex() const;
+    SVertex* GetRVertex() const;
+
+    DataRate GetRemainingBandwidth() const;
+
+    void SetChannel(Ptr<CsmaChannel> channel);
+
   private:
+    friend std::ostream& operator<<(std::ostream& os, const SEdge& edge);
     SVertex* m_leftVertex;
     SVertex* m_rightVertex;
     Ptr<Channel> m_channel;
-    double m_consumedBandwidth;
-    double m_remainingBandwidth;
-    // FIXME
+    DataRate m_consumedBandwidth;
+    DataRate m_remainingBandwidth;
+
+    DataRate m_totalBandwidth;
+    // DataRate m_cosu
+    //  FIXME
     std::map<SVertex*, double> m_allocatedBandwidth;
 };
 
@@ -88,20 +105,26 @@ class SnicScheduler : public Object
 
     /* returns true if we are able to allocate for this flow. Fills snicHeader
      * with allocation*/
+    typedef std::vector<SVertex*> Path_t;
     bool Schedule(SnicSchedulerHeader& snicHeader);
     void Release(SnicSchedulerHeader& snicHeader);
 
     uint64_t GetAlllocationCount() const;
     void DumpAllPaths() const;
     void DumpPath(const std::vector<SVertex*>& path) const;
+    void DumpEdges() const;
 
   protected:
+
     void AddNode(Ptr<Node> node);
     void DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit);
     void PopulateStaticRoutes();
     void InitializeResources();
 
     SVertex* GetVertexFromIp(const Ipv4Address& ip) const;
+
+    bool PathIsValid(const SnicSchedulerHeader& header, Path_t path) const;
+    void AllocatePath(Path_t path);
 
   private:
     Ptr<NetDevice> m_device;
@@ -116,7 +139,6 @@ class SnicScheduler : public Object
     typedef std::vector<SEdge*> ListOfSEdge_t;
     ListOfSEdge_t m_edges;
 
-    typedef std::vector<SVertex*> Path_t;
     std::map<SVertex*, std::map<SVertex*, std::vector<Path_t>>> m_allPaths;
     // topology
     // active flow table

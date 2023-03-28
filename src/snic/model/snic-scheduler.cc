@@ -108,15 +108,24 @@ SnicScheduler::AddNode(Ptr<Node> node)
             for (std::size_t c = 0; c < csmaChannel->GetNDevices(); ++c)
             {
                 Ptr<NetDevice> d = csmaChannel->GetDevice(c);
+                if (d == dev)
+                {
+                    continue;
+                }
                 Ptr<Node> nextNode = d->GetNode();
                 NS_LOG_DEBUG("\t\t csma node: " << nextNode);
                 AddNode(nextNode);
                 SVertex* nextVertex = m_addedNodes[nextNode];
 
-                SEdge* edge = new SEdge();
-                edge->SetVertices(v, nextVertex);
-                m_edges.push_back(edge);
-                v->AddEdge(edge, nextVertex);
+                SEdge* forwardEdge = new SEdge();
+                // SEdge* backwardEdge = new SEdge();
+                forwardEdge->SetVertices(v, nextVertex);
+                forwardEdge->SetChannel(csmaChannel);
+                // backwardEdge->SetVertices(nextVertex, v);
+                m_edges.push_back(forwardEdge);
+                // m_edges.push_back(backwardEdge);
+                v->AddEdge(forwardEdge, nextVertex);
+                // nextVertex->AddEdge(backwardEdge, v);
                 v->AddVertex(nextVertex);
             }
 
@@ -232,6 +241,7 @@ SnicScheduler::InitializeResources()
 SVertex*
 SnicScheduler::GetVertexFromIp(const Ipv4Address& ip) const
 {
+    NS_LOG_FUNCTION(this);
     SVertex* res = nullptr;
     for (ListOfSVertex_t::const_iterator it = m_vertices.begin(); it != m_vertices.end(); ++it)
     {
@@ -243,6 +253,36 @@ SnicScheduler::GetVertexFromIp(const Ipv4Address& ip) const
     }
 
     return res;
+}
+
+bool
+SnicScheduler::PathIsValid(const SnicSchedulerHeader& header, Path_t path) const
+{
+    NS_LOG_FUNCTION(this);
+    // typedef SVertex*
+    NS_ASSERT_MSG(path.size() > 1, "path is too short");
+
+    for (uint32_t i = 0; i < path.size() - 1; ++i)
+    {
+        SVertex* v = path[i];
+        // if (i + 1
+        SEdge* nextEdge = v->GetEdgeTo(path[i + 1]);
+        double d = header.GetBandwidthDemand();
+        NS_LOG_DEBUG("D: " << d);
+        if (nextEdge->GetRemainingBandwidth() >= d)
+        {
+            NS_LOG_DEBUG("PathIsValid: true");
+            return true;
+        }
+        // check demand
+    }
+    return false;
+}
+
+void
+SnicScheduler::AllocatePath(Path_t path)
+{
+    NS_LOG_FUNCTION(this);
 }
 
 void
@@ -349,10 +389,32 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     NS_LOG_DEBUG("src: " << srcIp);
     NS_LOG_DEBUG("dest: " << dstIp);
 
-    SVertex* src = GetVertexFromIp(srcIp);
-    SVertex* dst = GetVertexFromIp(dstIp);
+    SVertex* src = GetVertexFromIp(srcIp)->GetConnectedVertex(0);
+    SVertex* dst = GetVertexFromIp(dstIp)->GetConnectedVertex(0);
     NS_ASSERT_MSG(src, "src not found");
     NS_ASSERT_MSG(dst, "dst not found");
+
+    NS_LOG_DEBUG(*src);
+    NS_LOG_DEBUG(*dst);
+    NS_LOG_DEBUG(m_allPaths[src][dst].size());
+
+    std::vector<Path_t>& paths = m_allPaths[src][dst];
+
+    // sort(paths.begin(), paths.end());
+    // DumpEdges();
+
+    for (uint32_t i = 0; i < paths.size(); ++i)
+    {
+        Path_t path = paths[i];
+        NS_LOG_DEBUG("size=" << paths[i].size());
+
+        if (PathIsValid(snicHeader, path))
+        {
+            AllocatePath(path);
+            return true;
+            // return path;
+        }
+    }
 
     // sort list of routes
     // create a graph that includes edges
@@ -432,6 +494,19 @@ SnicScheduler::DumpPath(const std::vector<SVertex*>& path) const
     }
 }
 
+void
+SnicScheduler::DumpEdges() const
+{
+    NS_LOG_FUNCTION(this);
+    NS_LOG_DEBUG("edges: ");
+
+    for (auto it = m_edges.begin(); it != m_edges.end(); ++it)
+    {
+        NS_LOG_DEBUG(**it);
+        NS_LOG_DEBUG("////////////////////");
+    }
+}
+
 // ---------------------------------------------------------------------------
 //
 // SVertex Implementation
@@ -495,6 +570,19 @@ SVertex::GetVertexType() const
     return m_vertexType;
 }
 
+SVertex*
+SVertex::GetConnectedVertex(uint32_t id) const
+{
+    NS_ASSERT_MSG(id < m_vertices.size(), "GetConnectedVertex: out of range");
+    return m_vertices[id];
+}
+
+SEdge*
+SVertex::GetEdgeTo(SVertex* v)
+{
+    return m_edgeMap[v];
+}
+
 void
 SVertex::AddEdge(SEdge* edge, SVertex* other)
 {
@@ -530,9 +618,9 @@ operator<<(std::ostream& os, const SVertex& vertex)
 SEdge::SEdge()
     : m_leftVertex(nullptr),
       m_rightVertex(nullptr),
-      m_channel(nullptr),
-      m_consumedBandwidth(0),
-      m_remainingBandwidth(0)
+      m_channel(nullptr)
+// m_consumedBandwidth(0),
+// m_remainingBandwidth(0)
 {
 }
 
@@ -554,4 +642,37 @@ SEdge::SetRVertex(SVertex* v)
 {
     m_rightVertex = v;
 }
+
+SVertex*
+SEdge::GetLVertex() const
+{
+    return m_leftVertex;
+}
+
+SVertex*
+SEdge::GetRVertex() const
+{
+    return m_rightVertex;
+}
+
+DataRate
+SEdge::GetRemainingBandwidth() const
+{
+    return m_remainingBandwidth;
+}
+
+void
+SEdge::SetChannel(Ptr<CsmaChannel> channel)
+{
+    m_channel = channel;
+    m_totalBandwidth = channel->GetDataRate();
+}
+
+std::ostream&
+operator<<(std::ostream& os, const SEdge& edge)
+{
+    os << "left=" << *edge.GetLVertex() << " \nright=" << *edge.GetRVertex();
+    return os;
+}
+
 } // namespace ns3

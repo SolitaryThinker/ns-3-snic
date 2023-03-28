@@ -73,12 +73,12 @@ SnicSchedulerHeader::~SnicSchedulerHeader()
 }
 
 void
-SnicSchedulerHeader::SetBandwidthDemand(uint32_t demand)
+SnicSchedulerHeader::SetBandwidthDemand(double demand)
 {
     m_bandwidthDemand = demand;
 }
 
-uint32_t
+double
 SnicSchedulerHeader::GetBandwidthDemand() const
 {
     return m_bandwidthDemand;
@@ -87,7 +87,8 @@ SnicSchedulerHeader::GetBandwidthDemand() const
 void
 SnicSchedulerHeader::SetResourceDemand(uint32_t demand)
 {
-    m_bandwidthDemand = demand;
+    NS_LOG_FUNCTION(this << demand);
+    m_resourceDemand = demand;
 }
 
 uint32_t
@@ -235,7 +236,7 @@ SnicSchedulerHeader::Print(std::ostream& os) const
 uint32_t
 SnicSchedulerHeader::GetSerializedSize() const
 {
-    return 62;
+    return 66;
 }
 
 void
@@ -244,7 +245,8 @@ SnicSchedulerHeader::Serialize(Buffer::Iterator start) const
     NS_LOG_FUNCTION_NOARGS();
     Buffer::Iterator i = start;
 
-    i.WriteHtonU32(m_bandwidthDemand);
+    // i.WriteHtonU64(m_bandwidthDemand);
+    i.Write((uint8_t*)&m_bandwidthDemand, 8);
     i.WriteHtonU32(m_resourceDemand);
     i.WriteHtonU16(m_numNetworkTask);
     i.WriteHtonU16(m_nt);
@@ -264,7 +266,8 @@ SnicSchedulerHeader::Deserialize(Buffer::Iterator start)
 {
     NS_LOG_FUNCTION_NOARGS();
     Buffer::Iterator i = start;
-    m_bandwidthDemand = i.ReadNtohU32();
+    // m_bandwidthDemand = i.ReadNtohU64();
+    i.Read((uint8_t*)&m_bandwidthDemand, 8);
     m_resourceDemand = i.ReadNtohU32();
     m_numNetworkTask = i.ReadNtohU16();
     m_nt = i.ReadNtohU16();

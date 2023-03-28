@@ -396,6 +396,8 @@ SnicWorkloadClient::Send()
                                      << "at time=" << Simulator::Now().GetNanoSeconds());
             m_currentFlow = m_flowCount;
             header.SetNewFlow(true);
+            // set flow requirements
+            header.SetTput(20.56);
             m_newFlow = false;
             m_flowCount++;
         }
