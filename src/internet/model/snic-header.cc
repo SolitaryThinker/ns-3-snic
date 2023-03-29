@@ -18,7 +18,7 @@ SnicRte::SnicRte()
       m_prefix("127.0.0.1"),
       m_subnetMask("0.0.0.0"),
       m_nextHop("0.0.0.0"),
-      m_metric(16)
+      m_interfaceNum(0)
 {
 }
 
@@ -41,9 +41,7 @@ SnicRte::GetInstanceTypeId() const
 void
 SnicRte::Print(std::ostream& os) const
 {
-    os << "prefix " << m_prefix << "/" << m_subnetMask.GetPrefixLength() << " Metric "
-       << int(m_metric);
-    os << " Tag " << int(m_tag) << " Next Hop " << m_nextHop;
+    os << " rte interfaceNum=" << m_interfaceNum;
 }
 
 uint32_t
@@ -61,7 +59,7 @@ SnicRte::Serialize(Buffer::Iterator i) const
     i.WriteHtonU32(m_prefix.Get());
     i.WriteHtonU32(m_subnetMask.Get());
     i.WriteHtonU32(m_nextHop.Get());
-    i.WriteHtonU32(m_metric);
+    i.WriteHtonU32(m_interfaceNum);
 }
 
 uint32_t
@@ -80,7 +78,7 @@ SnicRte::Deserialize(Buffer::Iterator i)
     m_subnetMask.Set(i.ReadNtohU32());
     m_nextHop.Set(i.ReadNtohU32());
 
-    m_metric = i.ReadNtohU32();
+    m_interfaceNum = i.ReadNtohU32();
 
     return GetSerializedSize();
 }
@@ -122,15 +120,15 @@ SnicRte::GetRouteTag() const
 }
 
 void
-SnicRte::SetRouteMetric(uint32_t routeMetric)
+SnicRte::SetInterfaceNum(uint32_t num)
 {
-    m_metric = routeMetric;
+    m_interfaceNum = num;
 }
 
 uint32_t
-SnicRte::GetRouteMetric() const
+SnicRte::GetInterfaceNum() const
 {
-    return m_metric;
+    return m_interfaceNum;
 }
 
 void
@@ -171,6 +169,8 @@ SnicHeader::SnicHeader()
       m_newFlow(false),
       m_isLastInFlow(false),
       m_tput(0),
+      m_flowId(0),
+      // m_numRtes(0),
       m_checksum(0),
       m_calcChecksum(false),
       m_goodChecksum(true),
@@ -462,12 +462,17 @@ SnicHeader::Print(std::ostream& os) const
        << " seenSnic: " << m_hasSeenNic << " snic_nt: " << m_nt << ", payload: " << m_payload
        << ", snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
        << m_destinationPort;
+    for (auto iter = m_rteList.begin(); iter != m_rteList.end(); ++iter)
+    {
+        os << *iter;
+    }
 }
 
 uint32_t
 SnicHeader::GetSerializedSize() const
 {
-    return 39;
+    SnicRte rte;
+    return 40 + m_rteList.size() * rte.GetSerializedSize();
 }
 
 void
@@ -487,13 +492,16 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     // i.WriteHtonU64(m_tput);
     i.Write((uint8_t*)&m_tput, 8);
     i.WriteHtonU64(m_flowId);
+    i.WriteU8(m_rteList.size());
     if (m_payloadSize == 0)
     {
         i.WriteHtonU16(start.GetSize());
+        NS_LOG_DEBUG("serialize size=" << start.GetSize());
     }
     else
     {
         i.WriteHtonU16(m_payloadSize);
+        NS_LOG_DEBUG("serialize paytloadsize=" << m_payloadSize);
     }
 
     if (m_checksum == 0)
@@ -515,6 +523,14 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     {
         i.WriteU16(m_checksum);
     }
+
+    for (std::list<SnicRte>::const_iterator iter = m_rteList.begin(); iter != m_rteList.end();
+         ++iter)
+    {
+        NS_LOG_DEBUG("serializing rte");
+        iter->Serialize(i);
+        i.Next(iter->GetSerializedSize());
+    }
 }
 
 uint32_t
@@ -533,7 +549,8 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     // m_tput = i.ReadNtohU64();
     i.Read((uint8_t*)&m_tput, 8);
     m_flowId = i.ReadNtohU64();
-    m_payloadSize = i.ReadNtohU16() - GetSerializedSize();
+    uint8_t numRtes = i.ReadU8();
+    m_payloadSize = i.ReadNtohU16();
     m_checksum = i.ReadU16();
 
     if (m_calcChecksum)
@@ -545,6 +562,20 @@ SnicHeader::Deserialize(Buffer::Iterator start)
         m_goodChecksum = (checksum == 0);
     }
 
+    SnicRte rte;
+
+    // uint8_t rteNumber = i.GetRemainingSize() / rte.GetSerializedSize();
+    // NS_LOG_DEBUG("remaining=" << i.GetRemainingSize());
+
+    for (uint8_t n = 0; n < numRtes; n++)
+    {
+        i.Next(rte.Deserialize(i));
+        m_rteList.push_back(rte);
+        NS_LOG_DEBUG("doing it ");
+    }
+    // m_payloadSize -= GetSerializedSize();
+    NS_LOG_DEBUG("deserial2 m_newFlow=" << m_newFlow);
+
     return GetSerializedSize();
 }
 
@@ -552,6 +583,37 @@ uint16_t
 SnicHeader::GetChecksum()
 {
     return m_checksum;
+}
+
+void
+SnicHeader::AddRte(SnicRte rte)
+{
+    m_rteList.push_back(rte);
+}
+
+void
+SnicHeader::ClearRtes()
+{
+    m_rteList.clear();
+}
+
+uint16_t
+SnicHeader::GetRteNumber() const
+{
+    return m_rteList.size();
+}
+
+std::list<SnicRte>
+SnicHeader::GetRteList() const
+{
+    return m_rteList;
+}
+
+std::ostream&
+operator<<(std::ostream& os, const SnicHeader& h)
+{
+    h.Print(os);
+    return os;
 }
 
 } // namespace ns3

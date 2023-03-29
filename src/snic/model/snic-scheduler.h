@@ -3,6 +3,7 @@
 
 #include "ns3/csma-module.h"
 #include "ns3/data-rate.h"
+#include "ns3/flow.h"
 #include "ns3/node.h"
 #include "ns3/object.h"
 #include "ns3/ptr.h"
@@ -78,11 +79,17 @@ class SEdge
 
     void SetChannel(Ptr<CsmaChannel> channel);
 
+    void SetRInterfaceNum(uint32_t num);
+    uint32_t GetRInterfaceNum() const;
+
+    void AssignBandwidth(DataRate bps);
+
   private:
     friend std::ostream& operator<<(std::ostream& os, const SEdge& edge);
     SVertex* m_leftVertex;
     SVertex* m_rightVertex;
     Ptr<Channel> m_channel;
+    uint32_t m_rightInterfaceNum;
     DataRate m_consumedBandwidth;
     DataRate m_remainingBandwidth;
 
@@ -106,7 +113,7 @@ class SnicScheduler : public Object
     /* returns true if we are able to allocate for this flow. Fills snicHeader
      * with allocation*/
     typedef std::vector<SVertex*> Path_t;
-    bool Schedule(SnicSchedulerHeader& snicHeader);
+    bool Schedule(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader);
     void Release(SnicSchedulerHeader& snicHeader);
 
     uint64_t GetAlllocationCount() const;
@@ -124,7 +131,7 @@ class SnicScheduler : public Object
     SVertex* GetVertexFromIp(const Ipv4Address& ip) const;
 
     bool PathIsValid(const SnicSchedulerHeader& header, Path_t path) const;
-    void AllocatePath(Path_t path);
+    void AllocatePath(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader, Path_t path);
 
   private:
     Ptr<NetDevice> m_device;
@@ -156,7 +163,7 @@ class SnicScheduler : public Object
     // indexed by resource
     std::map<uint8_t, double> m_resourceConsumed;
     // indexed by vertex
-    std::map<SVertex*, std::map<uint8_t, double>> m_resourceAllocated;
+    std::map<FlowId, std::map<uint8_t, double>> m_resourceAllocated;
     // indexed by resource
     std::map<uint8_t, double> m_resourceRemaining;
 };

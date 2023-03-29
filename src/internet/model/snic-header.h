@@ -96,13 +96,13 @@ class SnicRte : public Header
      * \brief Set the route metric.
      * \param routeMetric The route metric.
      */
-    void SetRouteMetric(uint32_t routeMetric);
+    void SetInterfaceNum(uint32_t num);
 
     /**
      * \brief Get the route metric.
      * \returns The route metric.
      */
-    uint32_t GetRouteMetric() const;
+    uint32_t GetInterfaceNum() const;
 
     /**
      * \brief Set the next hop.
@@ -121,8 +121,12 @@ class SnicRte : public Header
     Ipv4Address m_prefix;  //!< Advertised prefix.
     Ipv4Mask m_subnetMask; //!< Subnet mask.
     Ipv4Address m_nextHop; //!< Next hop.
-    uint32_t m_metric;     //!< Route metric.
+    // uint32_t m_metric;     //!< Route metric.
+
+    uint32_t m_interfaceNum;
 };
+
+std::ostream& operator<<(std::ostream& os, const SnicRte& h);
 
 class SnicHeader : public Header
 {
@@ -289,6 +293,29 @@ class SnicHeader : public Header
         RECONFIG_RESPONSE
     };
 
+    /**
+     * \brief Add a RTE to the message
+     * \param rte the RTE
+     */
+    void AddRte(SnicRte rte);
+
+    /**
+     * \brief Clear all the RTEs from the header
+     */
+    void ClearRtes();
+
+    /**
+     * \brief Get the number of RTE included in the message
+     * \returns the number of RTE in the message
+     */
+    uint16_t GetRteNumber() const;
+
+    /**
+     * \brief Get the list of the RTEs included in the message
+     * \returns the list of the RTEs in the message
+     */
+    std::list<SnicRte> GetRteList() const;
+
   private:
     bool m_isOffloaded;
     /**
@@ -312,6 +339,7 @@ class SnicHeader : public Header
     bool m_isLastInFlow;
     double m_tput;
     uint64_t m_flowId;
+    // uint8_t m_numRtes;
     uint16_t m_checksum;   //!< Forced Checksum value
     bool m_calcChecksum;   //!< Flag to calculate checksum
     bool m_goodChecksum;   //!< Flag to indicate that checksum is correct
@@ -320,6 +348,8 @@ class SnicHeader : public Header
     // NOTE Not serialized
     Time m_delay;
 };
+
+std::ostream& operator<<(std::ostream& os, const SnicHeader& h);
 
 } // namespace ns3
 #endif // SNIC_HEADER_H

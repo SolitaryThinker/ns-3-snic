@@ -356,6 +356,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
     SnicHeader snicHeader;
     packet->RemoveHeader(ipv4Header);
     packet->RemoveHeader(snicHeader);
+    snicHeader.ClearRtes();
     NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
     NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
     NS_LOG_DEBUG("\tpackettype?: " << snicHeader.GetPacketType());
@@ -459,7 +460,9 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         // NS_FATAL_ERROR("");
         //}
         NS_LOG_DEBUG("running sched");
-        m_scheduler.Schedule(schedHeader);
+        m_scheduler.Schedule(snicHeader, schedHeader);
+        NS_LOG_DEBUG("done running sched");
+        NS_LOG_DEBUG(snicHeader);
         //  reply
         Ptr<Packet> response = Create<Packet>();
         SnicSchedulerHeader responseSchedHeader(ipv4Header, snicHeader);
@@ -682,6 +685,7 @@ SnicNetDevice::ProcessPacket(Ptr<NetDevice> incomingPort,
     SnicHeader snicHeader;
     // strip snic header
     pktCopy->RemoveHeader(snicHeader);
+    snicHeader.ClearRtes();
 
     // process snic header
     // TODO check for valid nt id

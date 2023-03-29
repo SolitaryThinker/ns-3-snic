@@ -121,6 +121,7 @@ SnicScheduler::AddNode(Ptr<Node> node)
                 // SEdge* backwardEdge = new SEdge();
                 forwardEdge->SetVertices(v, nextVertex);
                 forwardEdge->SetChannel(csmaChannel);
+                forwardEdge->SetRInterfaceNum(interfaceNum);
                 // backwardEdge->SetVertices(nextVertex, v);
                 m_edges.push_back(forwardEdge);
                 // m_edges.push_back(backwardEdge);
@@ -269,20 +270,51 @@ SnicScheduler::PathIsValid(const SnicSchedulerHeader& header, Path_t path) const
         SEdge* nextEdge = v->GetEdgeTo(path[i + 1]);
         double d = header.GetBandwidthDemand();
         NS_LOG_DEBUG("D: " << d);
-        if (nextEdge->GetRemainingBandwidth() >= d)
+        DataRate demand = DataRate(std::to_string(d) + "Gbps");
+        NS_LOG_DEBUG(demand);
+        NS_LOG_DEBUG(nextEdge->GetRemainingBandwidth());
+        // if (nextEdge->GetRemainingBandwidth() >= DataRate(std::to_string(d) + "Gbps"))
+        if (nextEdge->GetRemainingBandwidth() < demand)
         {
-            NS_LOG_DEBUG("PathIsValid: true");
-            return true;
+            return false;
         }
+        NS_LOG_DEBUG("PathIsValid: true");
         // check demand
     }
-    return false;
+    return true;
 }
 
 void
-SnicScheduler::AllocatePath(Path_t path)
+SnicScheduler::AllocatePath(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader, Path_t path)
 {
     NS_LOG_FUNCTION(this);
+
+    for (uint32_t i = 0; i < path.size() - 1; ++i)
+    {
+        SVertex* v = path[i];
+        SVertex* nextVertex = path[i + 1];
+        // if (i + 1
+        SEdge* nextEdge = v->GetEdgeTo(nextVertex);
+        double d = schedHeader.GetBandwidthDemand();
+        DataRate demand = DataRate(std::to_string(d) + "Gbps");
+        NS_LOG_DEBUG(demand);
+        FlowId flowId(schedHeader);
+        // m_allPaths\c
+        m_resourceAllocated[flowId][INGRESS] = d;
+        m_resourceAllocated[flowId][EGRESS] = d;
+        // Allocate(flowId, path, demand);
+        nextEdge->AssignBandwidth(demand);
+        NS_LOG_DEBUG("D: " << d);
+        NS_LOG_DEBUG(nextEdge->GetRemainingBandwidth());
+
+        SnicRte rte;
+        rte.SetNextHop(nextVertex->GetVertexId());
+        rte.SetInterfaceNum(nextEdge->GetRInterfaceNum());
+        // rte.SetEdge(nextEdge);
+        snicHeader.AddRte(rte);
+        // if (nextEdge->GetRemainingBandwidth() >= DataRate(std::to_string(d) + "Gbps"))
+        // check demand
+    }
 }
 
 void
@@ -373,9 +405,9 @@ SnicScheduler::DepthFirstTraversal(SVertex* src, SVertex* dst, uint32_t limit)
 /* returns true if we are able to allocate for this flow. Fills snicHeader
  * with allocation*/
 bool
-SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
+SnicScheduler::Schedule(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader)
 {
-    NS_LOG_FUNCTION(this << snicHeader);
+    NS_LOG_FUNCTION(this << schedHeader);
     NS_LOG_DEBUG("IN SCHEDULER");
     if (!m_initialized)
     {
@@ -384,8 +416,8 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     }
     m_allocationCount++;
     NS_LOG_DEBUG("allocationCount: " << m_allocationCount);
-    Ipv4Address srcIp = snicHeader.GetSourceIp();
-    Ipv4Address dstIp = snicHeader.GetDestinationIp();
+    Ipv4Address srcIp = schedHeader.GetSourceIp();
+    Ipv4Address dstIp = schedHeader.GetDestinationIp();
     NS_LOG_DEBUG("src: " << srcIp);
     NS_LOG_DEBUG("dest: " << dstIp);
 
@@ -401,16 +433,17 @@ SnicScheduler::Schedule(SnicSchedulerHeader& snicHeader)
     std::vector<Path_t>& paths = m_allPaths[src][dst];
 
     // sort(paths.begin(), paths.end());
-    // DumpEdges();
+    DumpEdges();
+    // return true;
 
     for (uint32_t i = 0; i < paths.size(); ++i)
     {
         Path_t path = paths[i];
         NS_LOG_DEBUG("size=" << paths[i].size());
 
-        if (PathIsValid(snicHeader, path))
+        if (PathIsValid(schedHeader, path))
         {
-            AllocatePath(path);
+            AllocatePath(snicHeader, schedHeader, path);
             return true;
             // return path;
         }
@@ -618,7 +651,8 @@ operator<<(std::ostream& os, const SVertex& vertex)
 SEdge::SEdge()
     : m_leftVertex(nullptr),
       m_rightVertex(nullptr),
-      m_channel(nullptr)
+      m_channel(nullptr),
+      m_rightInterfaceNum(0)
 // m_consumedBandwidth(0),
 // m_remainingBandwidth(0)
 {
@@ -666,6 +700,28 @@ SEdge::SetChannel(Ptr<CsmaChannel> channel)
 {
     m_channel = channel;
     m_totalBandwidth = channel->GetDataRate();
+    m_remainingBandwidth = m_totalBandwidth;
+}
+
+void
+SEdge::SetRInterfaceNum(uint32_t num)
+{
+    m_rightInterfaceNum = num;
+}
+
+uint32_t
+SEdge::GetRInterfaceNum() const
+{
+    return m_rightInterfaceNum;
+}
+
+void
+SEdge::AssignBandwidth(DataRate bps)
+{
+    NS_ASSERT(m_remainingBandwidth >= bps);
+    m_remainingBandwidth -= bps;
+    m_consumedBandwidth += bps;
+    // m_allocatedBandwidth
 }
 
 std::ostream&

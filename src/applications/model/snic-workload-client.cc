@@ -408,6 +408,8 @@ SnicWorkloadClient::Send()
         m_currentFlowPkt++;
     }
     p->AddHeader(header);
+    NS_LOG_DEBUG("testing wtf");
+    // header.ClearRtes();
     Address localAddress;
     m_socket->GetSockName(localAddress);
     // call to the trace sinks before the packet is actually sent,
