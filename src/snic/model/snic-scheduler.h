@@ -84,11 +84,18 @@ class SEdge
 
     void AssignBandwidth(DataRate bps);
 
+    void SetLDevice(Ptr<NetDevice> device);
+    void SetRDevice(Ptr<NetDevice> device);
+    Ptr<NetDevice> GetLDevice() const;
+    Ptr<NetDevice> GetRDevice() const;
+
   private:
     friend std::ostream& operator<<(std::ostream& os, const SEdge& edge);
     SVertex* m_leftVertex;
     SVertex* m_rightVertex;
     Ptr<Channel> m_channel;
+    Ptr<NetDevice> m_leftDevice;
+    Ptr<NetDevice> m_rightDevice;
     uint32_t m_rightInterfaceNum;
     DataRate m_consumedBandwidth;
     DataRate m_remainingBandwidth;

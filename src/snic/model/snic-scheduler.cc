@@ -56,6 +56,8 @@ SnicScheduler::AddNode(Ptr<Node> node)
     Ptr<Ipv4> ipv4 = node->GetObject<Ipv4>();
     Ipv4Address ip;
 
+    bool isSnicNode = false;
+    Ptr<SnicNetDevice> snicDev;
     uint32_t numDevices = node->GetNDevices();
     NS_LOG_DEBUG("numDevices: " << numDevices);
     for (uint32_t idx = 0; idx < numDevices; idx++)
@@ -80,6 +82,8 @@ SnicScheduler::AddNode(Ptr<Node> node)
 
         if (snic)
         {
+            snicDev = snic;
+            isSnicNode = true;
             NS_LOG_DEBUG("\t snic: " << snic << " " << snic->GetTypeId());
             NS_LOG_DEBUG("\t interface num: " << interfaceNum);
             Ipv4InterfaceAddress interfaceAddress = ipv4->GetAddress(interfaceNum, 0);
@@ -122,6 +126,12 @@ SnicScheduler::AddNode(Ptr<Node> node)
                 forwardEdge->SetVertices(v, nextVertex);
                 forwardEdge->SetChannel(csmaChannel);
                 forwardEdge->SetRInterfaceNum(interfaceNum);
+                NS_LOG_DEBUG("dev=" << dev);
+                NS_LOG_DEBUG("d=" << d);
+                if (isSnicNode)
+                    forwardEdge->SetLDevice(snicDev);
+                forwardEdge->SetRDevice(dev);
+                NS_LOG_DEBUG("sched: dev= " << d);
                 // backwardEdge->SetVertices(nextVertex, v);
                 m_edges.push_back(forwardEdge);
                 // m_edges.push_back(backwardEdge);
@@ -269,7 +279,7 @@ SnicScheduler::PathIsValid(const SnicSchedulerHeader& header, Path_t path) const
         // if (i + 1
         SEdge* nextEdge = v->GetEdgeTo(path[i + 1]);
         double d = header.GetBandwidthDemand();
-        NS_LOG_DEBUG("D: " << d);
+        // NS_LOG_DEBUG("D: " << d);
         DataRate demand = DataRate(std::to_string(d) + "Gbps");
         NS_LOG_DEBUG(demand);
         NS_LOG_DEBUG(nextEdge->GetRemainingBandwidth());
@@ -278,8 +288,8 @@ SnicScheduler::PathIsValid(const SnicSchedulerHeader& header, Path_t path) const
         {
             return false;
         }
-        NS_LOG_DEBUG("PathIsValid: true");
-        // check demand
+        // NS_LOG_DEBUG("PathIsValid: true");
+        //  check demand
     }
     return true;
 }
@@ -310,6 +320,10 @@ SnicScheduler::AllocatePath(SnicHeader& snicHeader, SnicSchedulerHeader& schedHe
         SnicRte rte;
         rte.SetNextHop(nextVertex->GetVertexId());
         rte.SetInterfaceNum(nextEdge->GetRInterfaceNum());
+        NS_LOG_DEBUG("rte l: " << nextEdge->GetLDevice());
+        NS_LOG_DEBUG("rte r: " << nextEdge->GetRDevice());
+        rte.SetLDevice(nextEdge->GetLDevice());
+        rte.SetRDevice(nextEdge->GetRDevice());
         // rte.SetEdge(nextEdge);
         snicHeader.AddRte(rte);
         // if (nextEdge->GetRemainingBandwidth() >= DataRate(std::to_string(d) + "Gbps"))
@@ -724,10 +738,35 @@ SEdge::AssignBandwidth(DataRate bps)
     // m_allocatedBandwidth
 }
 
+void
+SEdge::SetLDevice(Ptr<NetDevice> dev)
+{
+    m_leftDevice = dev;
+}
+
+void
+SEdge::SetRDevice(Ptr<NetDevice> dev)
+{
+    m_rightDevice = dev;
+}
+
+Ptr<NetDevice>
+SEdge::GetLDevice() const
+{
+    return m_leftDevice;
+}
+
+Ptr<NetDevice>
+SEdge::GetRDevice() const
+{
+    return m_rightDevice;
+}
+
 std::ostream&
 operator<<(std::ostream& os, const SEdge& edge)
 {
-    os << "left=" << *edge.GetLVertex() << " \nright=" << *edge.GetRVertex();
+    os << " interfaceNum=" << edge.GetRInterfaceNum() << " left=" << *edge.GetLVertex()
+       << " \nright=" << *edge.GetRVertex();
     return os;
 }
 

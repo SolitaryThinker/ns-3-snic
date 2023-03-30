@@ -90,7 +90,10 @@ class SnicSchedulerHeader : public Header
         L4_PACKET = 0,
         ALLOCATION_REQUEST = 1,
         ALLOCATION_RESPONSE = 2,
-        ALLOCATION_RELEASE = 3
+        ALLOCATION_RELEASE = 3,
+        NT_CONFIG_BEGIN,
+        NT_CONFIG_COMFIRM,
+        NT_CONFIG_DONE
     };
 
   private:

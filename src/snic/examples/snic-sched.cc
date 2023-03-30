@@ -57,7 +57,7 @@ main(int argc, char* argv[])
     LogComponentEnable("SnicHeader", LOG_LEVEL_LOGIC);
     LogComponentEnable("Statistic", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Node", LOG_LEVEL_LOGIC);
     // LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
@@ -95,7 +95,7 @@ main(int argc, char* argv[])
     serverApps2.Stop(Seconds(20.0));
 
     SnicWorkloadClientHelper workloadClient(interfaces.GetAddress(0), 9);
-    workloadClient.SetAttribute("MaxPackets", UintegerValue(14490));
+    workloadClient.SetAttribute("MaxPackets", UintegerValue(4490));
     workloadClient.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
     workloadClient.SetAttribute("PacketSize", UintegerValue(450));
     // workloadClient.SetAttribute("PacketSize", UintegerValue(9));

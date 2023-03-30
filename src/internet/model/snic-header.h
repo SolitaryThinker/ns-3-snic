@@ -10,6 +10,7 @@
 #include "ns3/header.h"
 #include "ns3/ipv4-address.h"
 #include "ns3/ipv6-address.h"
+#include "ns3/net-device.h"
 #include "ns3/nstime.h"
 
 #include <stdint.h>
@@ -96,13 +97,13 @@ class SnicRte : public Header
      * \brief Set the route metric.
      * \param routeMetric The route metric.
      */
-    void SetInterfaceNum(uint32_t num);
+    void SetInterfaceNum(int32_t num);
 
     /**
      * \brief Get the route metric.
      * \returns The route metric.
      */
-    uint32_t GetInterfaceNum() const;
+    int32_t GetInterfaceNum() const;
 
     /**
      * \brief Set the next hop.
@@ -110,6 +111,10 @@ class SnicRte : public Header
      */
     void SetNextHop(Ipv4Address nextHop);
 
+    void SetLDevice(Ptr<NetDevice> dev);
+    void SetRDevice(Ptr<NetDevice> dev);
+    Ptr<NetDevice> GetLDevice() const;
+    Ptr<NetDevice> GetRDevice() const;
     /**
      * \brief Get the next hop.
      * \returns The next hop.
@@ -123,7 +128,9 @@ class SnicRte : public Header
     Ipv4Address m_nextHop; //!< Next hop.
     // uint32_t m_metric;     //!< Route metric.
 
-    uint32_t m_interfaceNum;
+    int32_t m_interfaceNum;
+    uint64_t m_leftDevice;
+    uint64_t m_rightDevice;
 };
 
 std::ostream& operator<<(std::ostream& os, const SnicRte& h);
@@ -132,6 +139,7 @@ class SnicHeader : public Header
 {
   public:
     SnicHeader();
+    SnicHeader(const SnicHeader& a);
     ~SnicHeader() override;
 
     void AddNT(uint64_t nt);
@@ -160,6 +168,9 @@ class SnicHeader : public Header
 
     void SetFlowId(uint64_t flowId);
     uint64_t GetFlowId() const;
+
+    void SetUseRouting(bool useRouting);
+    bool GetUseRouting() const;
 
     void AddDelay(Time t);
     Time GetDelay() const;
@@ -316,6 +327,8 @@ class SnicHeader : public Header
      */
     std::list<SnicRte> GetRteList() const;
 
+    void SetRteList(std::list<SnicRte> rteList);
+
   private:
     bool m_isOffloaded;
     /**
@@ -339,6 +352,7 @@ class SnicHeader : public Header
     bool m_isLastInFlow;
     double m_tput;
     uint64_t m_flowId;
+    bool m_useRouting;
     // uint8_t m_numRtes;
     uint16_t m_checksum;   //!< Forced Checksum value
     bool m_calcChecksum;   //!< Flag to calculate checksum

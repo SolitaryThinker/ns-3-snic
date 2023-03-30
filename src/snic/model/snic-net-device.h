@@ -208,6 +208,12 @@ class SnicNetDevice : public NetDevice
                         Mac48Address src,
                         Mac48Address dst);
 
+    void Forward(Ptr<NetDevice> incomingPort,
+                 Ptr<Packet> packet,
+                 uint16_t protocol,
+                 Mac48Address src,
+                 Mac48Address dst);
+
     /**
      * \brief Forwards a broadcast or a multicast packet
      * \param incomingPort the packet incoming port
@@ -235,6 +241,22 @@ class SnicNetDevice : public NetDevice
      * \returns the port the source is associated to, or NULL if no association is known.
      */
     Ptr<NetDevice> GetLearnedState(Mac48Address source);
+
+    void HandleAllocationRequest(Ipv4Header& ipv4Header,
+                                 SnicHeader& snicHeader,
+                                 Ptr<NetDevice> incomingPort,
+                                 Ptr<Packet> packet,
+                                 uint16_t protocol,
+                                 Mac48Address src,
+                                 Mac48Address dst);
+
+    void HandleAllocationResponse(Ipv4Header& ipv4Header,
+                                  SnicHeader& snicHeader,
+                                  Ptr<NetDevice> incomingPort,
+                                  Ptr<Packet> packet,
+                                  uint16_t protocol,
+                                  Mac48Address src,
+                                  Mac48Address dst);
 
     void PipelinedSendFrom(Ptr<NetDevice> port,
                            Ptr<Packet> packet,

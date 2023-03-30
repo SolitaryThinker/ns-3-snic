@@ -356,7 +356,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
     SnicHeader snicHeader;
     packet->RemoveHeader(ipv4Header);
     packet->RemoveHeader(snicHeader);
-    snicHeader.ClearRtes();
+    // snicHeader.ClearRtes();
     NS_LOG_DEBUG("\tseen nic?: " << snicHeader.HasSeenNic());
     NS_LOG_DEBUG("\tis Scheduler?: " << IsScheduler());
     NS_LOG_DEBUG("\tpackettype?: " << snicHeader.GetPacketType());
@@ -460,7 +460,10 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         // NS_FATAL_ERROR("");
         //}
         NS_LOG_DEBUG("running sched");
-        m_scheduler.Schedule(snicHeader, schedHeader);
+        if (m_scheduler.Schedule(snicHeader, schedHeader) == false)
+        {
+            NS_FATAL_ERROR("out of resource");
+        }
         NS_LOG_DEBUG("done running sched");
         NS_LOG_DEBUG(snicHeader);
         //  reply
@@ -478,9 +481,10 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
         responseIpv4Header.SetSource(ipv4Header.GetDestination());
         responseIpv4Header.SetDestination(ipv4Header.GetSource());
         NS_LOG_DEBUG("creating response");
-        NS_ASSERT_MSG(false, "debugging scheduler");
+        // NS_ASSERT_MSG(false, "debugging scheduler");
         NS_LOG_DEBUG("old src: " << ipv4Header.GetSource());
         NS_LOG_DEBUG("old dest: " << ipv4Header.GetDestination());
+        NS_LOG_DEBUG(responseSnicHeader);
 
         response->AddHeader(responseSchedHeader);
         response->AddHeader(responseSnicHeader);
@@ -496,33 +500,13 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
             return;
         }
-        SnicSchedulerHeader schedHeader;
-        packet->RemoveHeader(schedHeader);
-        NS_LOG_DEBUG("got response");
-        // get flowid from response packet
-        FlowId flowId(schedHeader);
-        // find entry in packet buffer
-        PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
-        if (entry)
-        {
-            NS_LOG_DEBUG("found entry");
-        }
-
-        Ptr<Packet> pending = entry->DequeuePending();
-        while (pending)
-        {
-            // send
-            Mac48Address src48 = Mac48Address::ConvertFrom(entry->GetSrc());
-            Mac48Address dst48 = Mac48Address::ConvertFrom(entry->GetDst());
-            NS_LOG_DEBUG("dequeue uid " << pending->GetUid());
-            ForwardUnicast(entry->GetIncomingPort(), pending, entry->GetProtocol(), src48, dst48);
-            pending = entry->DequeuePending();
-        }
-        entry->MarkActive();
-
-        // markactive
-        // dequeue pending packets
-        // send all pending packets to destination using received route.
+        HandleAllocationResponse(ipv4Header,
+                                 snicHeader,
+                                 incomingPort,
+                                 packet,
+                                 protocol,
+                                 src48,
+                                 dst48);
         break;
     }
     case SnicHeader::ALLOCATION_RELEASE: {
@@ -598,7 +582,6 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
 
     if (!m_promiscRxCallback.IsNull())
     {
-        NS_LOG_DEBUG("calling callback");
         m_promiscRxCallback(this, packet, protocol, src, dst, packetType);
     }
     // bool isOurAddress = IsOurAddress(dst48);
@@ -685,7 +668,7 @@ SnicNetDevice::ProcessPacket(Ptr<NetDevice> incomingPort,
     SnicHeader snicHeader;
     // strip snic header
     pktCopy->RemoveHeader(snicHeader);
-    snicHeader.ClearRtes();
+    // snicHeader.ClearRtes();
 
     // process snic header
     // TODO check for valid nt id
@@ -745,6 +728,59 @@ SnicNetDevice::ForwardUnicast(Ptr<NetDevice> incomingPort,
                 PipelinedSendFrom(port, packet->Copy(), src, dst, protocol);
             }
         }
+    }
+}
+
+void
+SnicNetDevice::Forward(Ptr<NetDevice> incomingPort,
+                       Ptr<Packet> packet,
+                       uint16_t protocol,
+                       Mac48Address src,
+                       Mac48Address dst)
+{
+    NS_LOG_FUNCTION(this);
+
+    Ipv4Header ipv4Header;
+    SnicHeader snicHeader;
+    packet->RemoveHeader(ipv4Header);
+    packet->PeekHeader(snicHeader);
+    packet->AddHeader(ipv4Header);
+    std::list<SnicRte> rteList = snicHeader.GetRteList();
+    NS_LOG_DEBUG("rte size=" << rteList.size());
+    if (snicHeader.GetUseRouting() && rteList.size() > 0)
+    {
+        // find next rte entry.
+        for (auto it = rteList.begin(); it != rteList.end(); ++it)
+        {
+            // NS_LOG_DEBUG("l= " << (*it).GetLDevice());
+            // NS_LOG_DEBUG("r= " << (*it).GetRDevice());
+            // NS_LOG_DEBUG(this);
+            // Ptr<NetDevice> t = this;
+            // NS_LOG_DEBUG(t);
+            // NS_LOG_DEBUG("======");
+            //  if ((*it).GetLDevice() == this)
+            //{
+            //  NS_LOG_DEBUG("found ourself in rte list");
+            // }
+            for (std::vector<Ptr<NetDevice>>::iterator iter = m_ports.begin();
+                 iter != m_ports.end();
+                 iter++)
+            {
+                Ptr<NetDevice> port = *iter;
+                if (port == (*it).GetRDevice())
+                {
+                    NS_LOG_DEBUG("found in imp list");
+                    PipelinedSendFrom(port, packet->Copy(), src, dst, protocol);
+                    return;
+                }
+            }
+        }
+        NS_ASSERT("didn't find rte");
+    }
+    else
+    {
+        ForwardUnicast(incomingPort, packet, protocol, src, dst);
+        NS_ASSERT("no rteList");
     }
 }
 
@@ -811,6 +847,66 @@ SnicNetDevice::GetLearnedState(Mac48Address source)
         }
     }
     return nullptr;
+}
+
+void
+SnicNetDevice::HandleAllocationRequest(Ipv4Header& ipv4Header,
+                                       SnicHeader& snicHeader,
+                                       Ptr<NetDevice> incomingPort,
+                                       Ptr<Packet> packet,
+                                       uint16_t protocol,
+                                       Mac48Address src,
+                                       Mac48Address dst)
+{
+}
+
+void
+SnicNetDevice::HandleAllocationResponse(Ipv4Header& ipv4Header,
+                                        SnicHeader& snicHeader,
+                                        Ptr<NetDevice> incomingPort,
+                                        Ptr<Packet> packet,
+                                        uint16_t protocol,
+                                        Mac48Address src,
+                                        Mac48Address dst)
+{
+    NS_LOG_FUNCTION(this);
+
+    SnicSchedulerHeader schedHeader;
+    packet->PeekHeader(schedHeader);
+    NS_LOG_DEBUG("got response");
+    // get flowid from response packet
+    FlowId flowId(schedHeader);
+    // find entry in packet buffer
+    PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
+    if (entry)
+    {
+        NS_LOG_DEBUG("found entry");
+    }
+
+    Ptr<Packet> pending = entry->DequeuePending();
+    while (pending)
+    {
+        // send
+        Mac48Address src48 = Mac48Address::ConvertFrom(entry->GetSrc());
+        Mac48Address dst48 = Mac48Address::ConvertFrom(entry->GetDst());
+        NS_LOG_DEBUG("dequeue uid " << pending->GetUid());
+        // packet->AddHeader(snicHeader);
+        // packet->AddHeader(ipv4Header);
+        Ipv4Header pendingIpv4Header;
+        SnicHeader pendingSnicHeader;
+        pending->RemoveHeader(pendingIpv4Header);
+        pending->RemoveHeader(pendingSnicHeader);
+        pendingSnicHeader.SetRteList(snicHeader.GetRteList());
+
+        pending->AddHeader(pendingSnicHeader);
+        pending->AddHeader(pendingIpv4Header);
+
+        // NS_LOG_DEBUG(pendingSnicHeader);
+
+        Forward(entry->GetIncomingPort(), pending, entry->GetProtocol(), src48, dst48);
+        pending = entry->DequeuePending();
+    }
+    entry->MarkActive();
 }
 
 void

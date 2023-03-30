@@ -18,7 +18,9 @@ SnicRte::SnicRte()
       m_prefix("127.0.0.1"),
       m_subnetMask("0.0.0.0"),
       m_nextHop("0.0.0.0"),
-      m_interfaceNum(0)
+      m_interfaceNum(-1),
+      m_leftDevice(0),
+      m_rightDevice(0)
 {
 }
 
@@ -41,13 +43,14 @@ SnicRte::GetInstanceTypeId() const
 void
 SnicRte::Print(std::ostream& os) const
 {
-    os << " rte interfaceNum=" << m_interfaceNum;
+    os << " rte interfaceNum=" << m_interfaceNum << " ldev=" << m_leftDevice
+       << " rdev=" << m_rightDevice;
 }
 
 uint32_t
 SnicRte::GetSerializedSize() const
 {
-    return 20;
+    return 36;
 }
 
 void
@@ -60,6 +63,8 @@ SnicRte::Serialize(Buffer::Iterator i) const
     i.WriteHtonU32(m_subnetMask.Get());
     i.WriteHtonU32(m_nextHop.Get());
     i.WriteHtonU32(m_interfaceNum);
+    i.WriteHtonU64(m_leftDevice);
+    i.WriteHtonU64(m_rightDevice);
 }
 
 uint32_t
@@ -79,6 +84,8 @@ SnicRte::Deserialize(Buffer::Iterator i)
     m_nextHop.Set(i.ReadNtohU32());
 
     m_interfaceNum = i.ReadNtohU32();
+    m_leftDevice = i.ReadNtohU64();
+    m_rightDevice = i.ReadNtohU64();
 
     return GetSerializedSize();
 }
@@ -120,12 +127,12 @@ SnicRte::GetRouteTag() const
 }
 
 void
-SnicRte::SetInterfaceNum(uint32_t num)
+SnicRte::SetInterfaceNum(int32_t num)
 {
     m_interfaceNum = num;
 }
 
-uint32_t
+int32_t
 SnicRte::GetInterfaceNum() const
 {
     return m_interfaceNum;
@@ -141,6 +148,30 @@ Ipv4Address
 SnicRte::GetNextHop() const
 {
     return m_nextHop;
+}
+
+void
+SnicRte::SetLDevice(Ptr<NetDevice> dev)
+{
+    m_leftDevice = (uint64_t)GetPointer(dev);
+}
+
+void
+SnicRte::SetRDevice(Ptr<NetDevice> dev)
+{
+    m_rightDevice = (uint64_t)GetPointer(dev);
+}
+
+Ptr<NetDevice>
+SnicRte::GetLDevice() const
+{
+    return (Ptr<NetDevice>)(NetDevice*)m_leftDevice;
+}
+
+Ptr<NetDevice>
+SnicRte::GetRDevice() const
+{
+    return (Ptr<NetDevice>)(NetDevice*)m_rightDevice;
 }
 
 std::ostream&
@@ -170,11 +201,34 @@ SnicHeader::SnicHeader()
       m_isLastInFlow(false),
       m_tput(0),
       m_flowId(0),
-      // m_numRtes(0),
+      m_useRouting(true),
+      //  m_numRtes(0),
       m_checksum(0),
       m_calcChecksum(false),
       m_goodChecksum(true),
       m_delay(0)
+{
+}
+
+SnicHeader::SnicHeader(const SnicHeader& a)
+    : m_sourcePort(a.m_sourcePort),
+      m_destinationPort(a.m_destinationPort),
+      m_nt(a.m_nt),
+      m_payload(a.m_payload),
+      m_hasSeenNic(a.m_hasSeenNic),
+      m_packetType(a.m_packetType),
+      m_payloadSize(a.m_payloadSize),
+      m_newFlow(a.m_newFlow),
+      m_isLastInFlow(a.m_isLastInFlow),
+      m_tput(a.m_tput),
+      m_flowId(a.m_flowId),
+      m_useRouting(a.m_useRouting),
+      //  m_numRtes(0),
+      m_checksum(a.m_checksum),
+      m_calcChecksum(a.m_calcChecksum),
+      m_goodChecksum(a.m_goodChecksum),
+      m_rteList(a.m_rteList),
+      m_delay(a.m_delay)
 {
 }
 
@@ -283,6 +337,18 @@ uint64_t
 SnicHeader::GetFlowId() const
 {
     return m_flowId;
+}
+
+void
+SnicHeader::SetUseRouting(bool useRouting)
+{
+    m_useRouting = useRouting;
+}
+
+bool
+SnicHeader::GetUseRouting() const
+{
+    return m_useRouting;
 }
 
 void
@@ -464,7 +530,7 @@ SnicHeader::Print(std::ostream& os) const
        << m_destinationPort;
     for (auto iter = m_rteList.begin(); iter != m_rteList.end(); ++iter)
     {
-        os << *iter;
+        os << "\n" << *iter;
     }
 }
 
@@ -472,7 +538,7 @@ uint32_t
 SnicHeader::GetSerializedSize() const
 {
     SnicRte rte;
-    return 40 + m_rteList.size() * rte.GetSerializedSize();
+    return 41 + m_rteList.size() * rte.GetSerializedSize();
 }
 
 void
@@ -492,6 +558,7 @@ SnicHeader::Serialize(Buffer::Iterator start) const
     // i.WriteHtonU64(m_tput);
     i.Write((uint8_t*)&m_tput, 8);
     i.WriteHtonU64(m_flowId);
+    i.WriteU8(m_useRouting);
     i.WriteU8(m_rteList.size());
     if (m_payloadSize == 0)
     {
@@ -549,6 +616,7 @@ SnicHeader::Deserialize(Buffer::Iterator start)
     // m_tput = i.ReadNtohU64();
     i.Read((uint8_t*)&m_tput, 8);
     m_flowId = i.ReadNtohU64();
+    m_useRouting = i.ReadU8();
     uint8_t numRtes = i.ReadU8();
     m_payloadSize = i.ReadNtohU16();
     m_checksum = i.ReadU16();
@@ -607,6 +675,12 @@ std::list<SnicRte>
 SnicHeader::GetRteList() const
 {
     return m_rteList;
+}
+
+void
+SnicHeader::SetRteList(std::list<SnicRte> rteList)
+{
+    m_rteList = rteList;
 }
 
 std::ostream&
