@@ -324,11 +324,30 @@ SnicScheduler::AllocatePath(SnicHeader& snicHeader, SnicSchedulerHeader& schedHe
         NS_LOG_DEBUG("rte r: " << nextEdge->GetRDevice());
         rte.SetLDevice(nextEdge->GetLDevice());
         rte.SetRDevice(nextEdge->GetRDevice());
-        // rte.SetEdge(nextEdge);
+        rte.SetVertices((uint64_t)nextEdge->GetLVertex(), (uint64_t)nextEdge->GetRVertex());
+        // rte.SetRDevice(nextEdge->GetRDevice());
+        //  rte.SetEdge(nextEdge);
         snicHeader.AddRte(rte);
         // if (nextEdge->GetRemainingBandwidth() >= DataRate(std::to_string(d) + "Gbps"))
         // check demand
     }
+}
+
+std::vector<SVertex*>
+SnicScheduler::GetPathFromHeader(SnicHeader& snicHeader) const
+{
+    NS_LOG_FUNCTION(this);
+
+    auto rteList = snicHeader.GetRteList();
+    NS_LOG_DEBUG(rteList.size());
+    std::vector<SVertex*> path;
+
+    for (auto iter = rteList.begin(); iter != rteList.end(); ++iter)
+    {
+        SVertex* v = (SVertex*)(*iter).GetLVertex();
+        path.push_back(v);
+    }
+    return path;
 }
 
 void
@@ -499,8 +518,56 @@ SnicScheduler::Schedule(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader
 }
 
 void
-SnicScheduler::Release(SnicSchedulerHeader& snicHeader)
+SnicScheduler::Release(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader)
 {
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT(m_initialized);
+
+    Ipv4Address srcIp = schedHeader.GetSourceIp();
+    Ipv4Address dstIp = schedHeader.GetDestinationIp();
+    NS_LOG_DEBUG("src: " << srcIp);
+    NS_LOG_DEBUG("dest: " << dstIp);
+
+    SVertex* src = GetVertexFromIp(srcIp)->GetConnectedVertex(0);
+    SVertex* dst = GetVertexFromIp(dstIp)->GetConnectedVertex(0);
+    NS_ASSERT_MSG(src, "src not found");
+    NS_ASSERT_MSG(dst, "dst not found");
+
+    NS_LOG_DEBUG(*src);
+    NS_LOG_DEBUG(*dst);
+    NS_LOG_DEBUG(m_allPaths[src][dst].size());
+
+    // std::vector<Path_t>& paths = m_allPaths[src][dst];
+
+    std::vector<SVertex*> path = GetPathFromHeader(snicHeader);
+    // DeallocatePath(path);
+
+    // sort(paths.begin(), paths.end());
+    //DumpEdges();
+    // return true;
+
+    for (uint32_t i = 0; i < path.size() - 1; ++i)
+    {
+        SVertex* v = path[i];
+        SVertex* nextVertex = path[i + 1];
+        SEdge* nextEdge = v->GetEdgeTo(nextVertex);
+
+        FlowId flowId(schedHeader);
+
+        NS_ASSERT_MSG(m_resourceAllocated.count(flowId) > 0, "can't find flow allocated??");
+        double d = m_resourceAllocated[flowId][INGRESS];
+        DataRate demand = DataRate(std::to_string(d) + "Gbps");
+        nextEdge->DeallocateBandwidth(demand);
+        NS_LOG_DEBUG(demand);
+
+
+        // NS_ASSERT_MSG(m_resourceAllocated[flowId][INGRESS] == d, "doesnt match");
+
+        // m_allPaths\c
+        // FIXME maybe remove instead of setting to 0
+        m_resourceAllocated[flowId][INGRESS] = 0;
+        m_resourceAllocated[flowId][EGRESS] = 0;
+    }
 }
 
 uint64_t
@@ -736,6 +803,14 @@ SEdge::AssignBandwidth(DataRate bps)
     m_remainingBandwidth -= bps;
     m_consumedBandwidth += bps;
     // m_allocatedBandwidth
+}
+
+void
+SEdge::DeallocateBandwidth(DataRate bps)
+{
+    NS_ASSERT(m_consumedBandwidth >= bps);
+    m_remainingBandwidth += bps;
+    m_consumedBandwidth -= bps;
 }
 
 void

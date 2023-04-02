@@ -405,6 +405,11 @@ SnicWorkloadClient::Send()
                                 << "m_currentpkt=" << m_currentFlowPkt);
         header.SetFlowId(m_currentFlow);
         m_currentFlowSize += m_size;
+        if (m_currentFlowPkt == m_flowPktCount)
+        {
+            // is last packet so we set the header accordingly
+            header.SetIsLastInFlow(true);
+        }
         m_currentFlowPkt++;
     }
     p->AddHeader(header);

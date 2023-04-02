@@ -18,15 +18,30 @@ namespace ns3
 class NetworkTask : public Object
 {
   public:
-    NetworkTask();
-    ~NetworkTask();
+    static TypeId GetTypeId();
 
-    virtual void ProcessHeader(SnicHeader& header) = 0;
+    NetworkTask();
+    ~NetworkTask() override;
+
+    virtual void ProcessHeader(SnicHeader& header);
 
   private:
+    uint32_t m_id;
+    uint32_t m_ntType;
+
+    double m_fpgaFabric;
     DataRate m_ingressBps;
     DataRate m_egressBps;
     double m_memoryRequirement;
+
+    uint32_t m_pipelineSize;
+    Time m_delay;
+
+    // memory usage model
+
+    // used during deployment
+    bool m_ready;
+    bool m_performingReconfig;
 };
 
 } // namespace ns3

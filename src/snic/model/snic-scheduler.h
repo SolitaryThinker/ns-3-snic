@@ -4,6 +4,7 @@
 #include "ns3/csma-module.h"
 #include "ns3/data-rate.h"
 #include "ns3/flow.h"
+#include "ns3/network-task.h"
 #include "ns3/node.h"
 #include "ns3/object.h"
 #include "ns3/ptr.h"
@@ -59,6 +60,8 @@ class SVertex
     bool m_vertexProcessed;
     ListOfSEdge_t m_edges;
     std::map<SVertex*, SEdge*> m_edgeMap;
+
+    std::list<NetworkTask> m_networkTasks;
 };
 
 class SEdge
@@ -83,6 +86,7 @@ class SEdge
     uint32_t GetRInterfaceNum() const;
 
     void AssignBandwidth(DataRate bps);
+    void DeallocateBandwidth(DataRate bps);
 
     void SetLDevice(Ptr<NetDevice> device);
     void SetRDevice(Ptr<NetDevice> device);
@@ -106,6 +110,22 @@ class SEdge
     std::map<SVertex*, double> m_allocatedBandwidth;
 };
 
+class Path : public Object
+{
+  public:
+    // static TypeId
+    Path(uint64_t id);
+    ~Path() override;
+
+    void AddVertex(SVertex* v);
+    void AddEdge(SEdge* e);
+
+  private:
+    uint64_t m_pathId;
+    std::vector<SVertex*> m_vertices;
+    std::vector<SEdge*> m_edges;
+};
+
 class SnicScheduler : public Object
 {
   public:
@@ -121,7 +141,7 @@ class SnicScheduler : public Object
      * with allocation*/
     typedef std::vector<SVertex*> Path_t;
     bool Schedule(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader);
-    void Release(SnicSchedulerHeader& snicHeader);
+    void Release(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader);
 
     uint64_t GetAlllocationCount() const;
     void DumpAllPaths() const;
@@ -139,6 +159,8 @@ class SnicScheduler : public Object
 
     bool PathIsValid(const SnicSchedulerHeader& header, Path_t path) const;
     void AllocatePath(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader, Path_t path);
+
+    std::vector<SVertex*> GetPathFromHeader(SnicHeader& snicHeader) const;
 
   private:
     Ptr<NetDevice> m_device;

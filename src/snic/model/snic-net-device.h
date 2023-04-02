@@ -93,8 +93,14 @@ class SnicNetDevice : public NetDevice
     uint32_t GetNumNT();
     uint64_t GetNumSchedReqs() const;
 
-    void RequestAllocation(Ptr<NetDevice> incomingPort,
+    void AllocationRequest(Ptr<NetDevice> incomingPort,
                            Ptr<Packet> packet,
+                           uint16_t protocol,
+                           const Address& src,
+                           const Address& dst);
+
+    void AllocationRelease(Ptr<NetDevice> incomingPort,
+                           Ptr<const Packet> packet,
                            uint16_t protocol,
                            const Address& src,
                            const Address& dst);
@@ -257,6 +263,14 @@ class SnicNetDevice : public NetDevice
                                   uint16_t protocol,
                                   Mac48Address src,
                                   Mac48Address dst);
+
+    void HandleAllocationRelease(Ipv4Header& ipv4Header,
+                                 SnicHeader& snicHeader,
+                                 Ptr<NetDevice> incomingPort,
+                                 Ptr<Packet> packet,
+                                 uint16_t protocol,
+                                 Mac48Address src,
+                                 Mac48Address dst);
 
     void PipelinedSendFrom(Ptr<NetDevice> port,
                            Ptr<Packet> packet,

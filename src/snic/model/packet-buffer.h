@@ -39,6 +39,8 @@ class PacketBuffer : public Object
 
     Entry* Add(const FlowId& flowId);
 
+    void Delete(const FlowId& flowId);
+
     Entry* Lookup(const FlowId& flowId);
 
     // typedef std::pair<Ptr<Packet>, Ipv4Header> Ipv4PayloadHeaderPair;
@@ -66,6 +68,9 @@ class PacketBuffer : public Object
         Address GetSrc() const;
         Address GetDst() const;
 
+        void SetRoute(std::list<SnicRte> route);
+        std::list<SnicRte> GetRoute() const;
+
       private:
         enum PacketBufferEntryState_e
         {
@@ -88,6 +93,7 @@ class PacketBuffer : public Object
         Address m_dst;
 
         uint32_t m_retries;               //!< rerty counter
+        std::list<SnicRte> m_rteList;
     };
 
     typedef std::map<FlowId, PacketBuffer::Entry*> Buffer;

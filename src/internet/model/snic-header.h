@@ -115,6 +115,11 @@ class SnicRte : public Header
     void SetRDevice(Ptr<NetDevice> dev);
     Ptr<NetDevice> GetLDevice() const;
     Ptr<NetDevice> GetRDevice() const;
+
+    void SetVertices(uint64_t l, uint64_t r);
+    // void SetRDevice(Ptr<NetDevice> dev);
+    uint64_t GetLVertex() const;
+    uint64_t GetRVertex() const;
     /**
      * \brief Get the next hop.
      * \returns The next hop.
@@ -131,6 +136,9 @@ class SnicRte : public Header
     int32_t m_interfaceNum;
     uint64_t m_leftDevice;
     uint64_t m_rightDevice;
+
+    uint64_t m_leftVertex;
+    uint64_t m_rightVertex;
 };
 
 std::ostream& operator<<(std::ostream& os, const SnicRte& h);

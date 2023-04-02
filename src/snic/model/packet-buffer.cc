@@ -121,6 +121,19 @@ PacketBuffer::Add(const FlowId& flowId)
     return entry;
 }
 
+void
+PacketBuffer::Delete(const FlowId& flowId)
+{
+    NS_LOG_FUNCTION(this);
+    // NS_ASSERT(m_packetBuffer.find(flowId) == m_packetBuffer.end());
+    //  NS_ASSERT_MSG(m_pending.empty(), "trying to delete an entry with remaining pending
+    //  packets");
+    NS_ASSERT_MSG(m_packetBuffer.count(flowId) > 0,
+                  "trying to delete an entry that does not exist");
+
+    m_packetBuffer.erase(flowId);
+}
+
 PacketBuffer::Entry*
 PacketBuffer::Lookup(const FlowId& flowId)
 {
@@ -314,6 +327,18 @@ Address
 PacketBuffer::Entry::GetDst() const
 {
     return m_dst;
+}
+
+void
+PacketBuffer::Entry::SetRoute(std::list<SnicRte> route)
+{
+    m_rteList = route;
+}
+
+std::list<SnicRte>
+PacketBuffer::Entry::GetRoute() const
+{
+    return m_rteList;
 }
 
 } // namespace ns3

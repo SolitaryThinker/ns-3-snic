@@ -213,7 +213,7 @@ SnicNetDevice::GetNumSchedReqs() const
 }
 
 void
-SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
+SnicNetDevice::AllocationRequest(Ptr<NetDevice> incomingPort,
                                  Ptr<Packet> packet,
                                  uint16_t protocol,
                                  const Address& src,
@@ -269,6 +269,62 @@ SnicNetDevice::RequestAllocation(Ptr<NetDevice> incomingPort,
     //  newentry = flowid;
     //  m_packetBuffer.EnqueuePending(flowid, packet);
     //  m_packetBuffer.EnqueuePending(flowid, packet);
+    m_rxCallback(this, request, protocol, m_address);
+}
+
+void
+SnicNetDevice::AllocationRelease(Ptr<NetDevice> incomingPort,
+                                 Ptr<const Packet> packet,
+                                 uint16_t protocol,
+                                 const Address& src,
+                                 const Address& dst)
+{
+    NS_LOG_FUNCTION(this);
+
+    Ptr<Packet> copy = packet->Copy();
+
+    Ptr<Packet> request = Create<Packet>();
+    Ipv4Header ipv4Header;
+    SnicHeader snicHeader;
+    copy->RemoveHeader(ipv4Header);
+    copy->RemoveHeader(snicHeader);
+    // copy->RemoveHeader(schedHeader);
+    SnicSchedulerHeader schedHeader;
+    // NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetFlowId());
+    // NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetDestinationIp());
+    NS_ASSERT_MSG(snicHeader.IsLastInFlow(), "is not last packet flow!");
+
+    // schedHeader.SetBandwidthDemand(snicHeader.GetTput());
+    //  schedHeader.SetBandwidthDemand(20.55);
+    // schedHeader.SetResourceDemand(5);
+    // schedHeader.AddNT(5);
+    schedHeader.SetPacketType(SnicSchedulerHeader::ALLOCATION_RELEASE);
+
+    schedHeader.SetFlowId(snicHeader.GetFlowId());
+    schedHeader.SetSourceIp(ipv4Header.GetSource());
+    schedHeader.SetDestinationIp(ipv4Header.GetDestination());
+    schedHeader.SetSourcePort(snicHeader.GetSourcePort());
+    schedHeader.SetDestinationPort(snicHeader.GetDestinationPort());
+    schedHeader.SetProtocol(snicHeader.GetProtocol());
+
+    ipv4Header.SetDestination(m_schedulerAddress);
+    ipv4Header.SetSource(m_ipAddress);
+
+    snicHeader.SetPacketType(SnicHeader::ALLOCATION_RELEASE);
+
+    request->AddHeader(schedHeader);
+    request->AddHeader(snicHeader);
+    request->AddHeader(ipv4Header);
+    NS_LOG_DEBUG("flowid in snicheader: " << snicHeader.GetFlowId());
+    NS_LOG_DEBUG("flowid in schedheader: " << schedHeader.GetFlowId());
+    // create new flow to track packets
+    FlowId flowId(schedHeader);
+
+    // NOTE maybe wait for response?
+    m_packetBuffer.Delete(flowId);
+
+    // NS_ASSERT_MSG(false, "sending release req");
+
     m_rxCallback(this, request, protocol, m_address);
 }
 
@@ -378,9 +434,17 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
 
                 packet->AddHeader(snicHeader);
                 packet->AddHeader(ipv4Header);
-                ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+                // ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+                Forward(incomingPort, packet, protocol, src48, dst48);
+                // if (snicHeader.IsLastInFlow())
+                //{
+                // AllocationRelease(incomingPort, packet, protocol, src, dst);
+                //}
+
                 return;
             }
+            // this means the packet has been through one of the directly attached
+            // sNICs
             snicHeader.SetHasSeenNic();
             if (IsScheduler())
             {
@@ -416,13 +480,21 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                         packet->AddHeader(ipv4Header);
                         entry->EnqueuePending(packet);
                         NS_LOG_DEBUG("flow waitreply, enqueue");
+                        // FIXME handle last packet in flow while waiting for
+                        // scheduler response
                     }
                     else
                     {
+                        snicHeader.SetRteList(entry->GetRoute());
                         packet->AddHeader(snicHeader);
                         packet->AddHeader(ipv4Header);
                         NS_LOG_DEBUG("flow not waitreply forward");
-                        ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
+                        Forward(incomingPort, packet, protocol, src48, dst48);
+                        if (snicHeader.IsLastInFlow())
+                        {
+                            NS_LOG_DEBUG("in later if");
+                            AllocationRelease(incomingPort, packet, protocol, src, dst);
+                        }
                     }
                 }
                 else
@@ -430,7 +502,8 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                     NS_LOG_DEBUG("flow not found, requesting");
                     packet->AddHeader(snicHeader);
                     packet->AddHeader(ipv4Header);
-                    RequestAllocation(incomingPort, packet, protocol, src, dst);
+                    AllocationRequest(incomingPort, packet, protocol, src, dst);
+                    // FIXME also need to handle a single packet flow case.
                 }
                 return;
             }
@@ -517,6 +590,14 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
             ForwardUnicast(incomingPort, packet, protocol, src48, dst48);
             return;
         }
+        HandleAllocationRelease(ipv4Header,
+                                snicHeader,
+                                incomingPort,
+                                packet,
+                                protocol,
+                                src48,
+                                dst48);
+        NS_ASSERT_MSG(false, "done release");
         NS_LOG_DEBUG("got release");
         break;
     }
@@ -876,11 +957,15 @@ SnicNetDevice::HandleAllocationResponse(Ipv4Header& ipv4Header,
     NS_LOG_DEBUG("got response");
     // get flowid from response packet
     FlowId flowId(schedHeader);
+
+    // save route to use in other packets of the flow.
+    //
     // find entry in packet buffer
     PacketBuffer::Entry* entry = m_packetBuffer.Lookup(flowId);
     if (entry)
     {
         NS_LOG_DEBUG("found entry");
+        entry->SetRoute(snicHeader.GetRteList());
     }
 
     Ptr<Packet> pending = entry->DequeuePending();
@@ -907,6 +992,23 @@ SnicNetDevice::HandleAllocationResponse(Ipv4Header& ipv4Header,
         pending = entry->DequeuePending();
     }
     entry->MarkActive();
+}
+
+void
+SnicNetDevice::HandleAllocationRelease(Ipv4Header& ipv4Header,
+                                       SnicHeader& snicHeader,
+                                       Ptr<NetDevice> incomingPort,
+                                       Ptr<Packet> packet,
+                                       uint16_t protocol,
+                                       Mac48Address src,
+                                       Mac48Address dst)
+{
+    NS_LOG_FUNCTION(this);
+    NS_ASSERT_MSG(IsScheduler(), "we aren't the scheduler!");
+
+    SnicSchedulerHeader schedHeader;
+    packet->RemoveHeader(schedHeader);
+    m_scheduler.Release(snicHeader, schedHeader);
 }
 
 void

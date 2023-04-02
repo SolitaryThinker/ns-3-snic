@@ -116,6 +116,9 @@ class SnicSchedulerHeader : public Header
     Ipv4Address m_destination; //!< Destination IP address
     uint8_t m_protocol;    //!< Protocol number
     uint64_t m_flowId;
+
+    // uint32_t m_nt;
+    uint32_t m_ntId;
 };
 
 } // namespace ns3

@@ -20,7 +20,9 @@ SnicRte::SnicRte()
       m_nextHop("0.0.0.0"),
       m_interfaceNum(-1),
       m_leftDevice(0),
-      m_rightDevice(0)
+      m_rightDevice(0),
+      m_leftVertex(0),
+      m_rightVertex(0)
 {
 }
 
@@ -50,7 +52,7 @@ SnicRte::Print(std::ostream& os) const
 uint32_t
 SnicRte::GetSerializedSize() const
 {
-    return 36;
+    return 52;
 }
 
 void
@@ -65,6 +67,9 @@ SnicRte::Serialize(Buffer::Iterator i) const
     i.WriteHtonU32(m_interfaceNum);
     i.WriteHtonU64(m_leftDevice);
     i.WriteHtonU64(m_rightDevice);
+
+    i.WriteHtonU64(m_rightVertex);
+    i.WriteHtonU64(m_leftVertex);
 }
 
 uint32_t
@@ -86,6 +91,8 @@ SnicRte::Deserialize(Buffer::Iterator i)
     m_interfaceNum = i.ReadNtohU32();
     m_leftDevice = i.ReadNtohU64();
     m_rightDevice = i.ReadNtohU64();
+    m_leftVertex = i.ReadNtohU64();
+    m_rightVertex = i.ReadNtohU64();
 
     return GetSerializedSize();
 }
@@ -172,6 +179,25 @@ Ptr<NetDevice>
 SnicRte::GetRDevice() const
 {
     return (Ptr<NetDevice>)(NetDevice*)m_rightDevice;
+}
+
+void
+SnicRte::SetVertices(uint64_t l, uint64_t r)
+{
+    m_leftVertex = l;
+    m_rightVertex = r;
+}
+
+uint64_t
+SnicRte::GetLVertex() const
+{
+    return m_leftVertex;
+}
+
+uint64_t
+SnicRte::GetRVertex() const
+{
+    return m_rightVertex;
 }
 
 std::ostream&
