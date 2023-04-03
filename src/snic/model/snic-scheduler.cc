@@ -57,29 +57,16 @@ SnicScheduler::AddNode(Ptr<Node> node)
     Ipv4Address ip;
 
     bool isSnicNode = false;
-    Ptr<SnicNetDevice> snicDev;
+    Ptr<SnicNetDevice> snicDev = nullptr;
     uint32_t numDevices = node->GetNDevices();
     NS_LOG_DEBUG("numDevices: " << numDevices);
+
+    // find the snic if it exists
     for (uint32_t idx = 0; idx < numDevices; idx++)
     {
         Ptr<NetDevice> dev = node->GetDevice(idx);
         int32_t interfaceNum = ipv4->GetInterfaceForDevice(dev);
-        // if (interfaceNum == -1)
-        // continue;
-
         Ptr<SnicNetDevice> snic = DynamicCast<SnicNetDevice, NetDevice>(dev);
-        Ptr<CsmaNetDevice> csma = DynamicCast<CsmaNetDevice, NetDevice>(dev);
-        Ptr<LoopbackNetDevice> loop = DynamicCast<LoopbackNetDevice, NetDevice>(dev);
-
-        NS_LOG_DEBUG("\t dev: " << dev << " " << dev->GetTypeId());
-        // if (loop)
-        // NS_LOG_DEBUG(" IS LOOP");
-        if (!csma && !snic)
-        {
-            // NS_LOG_DEBUG("SKIPPING AAAAAAAAAAAAAAA");
-            continue;
-        }
-
         if (snic)
         {
             snicDev = snic;
@@ -93,7 +80,29 @@ SnicScheduler::AddNode(Ptr<Node> node)
             v->SetVertexType(SVertex::VertexTypeNic);
             m_nicVertices.push_back(v);
         }
-        else if (csma)
+    }
+
+    if (!isSnicNode)
+    {
+        v->SetVertexType(SVertex::VertexTypeHost);
+        m_hostVertices.push_back(v);
+    }
+
+    for (uint32_t idx = 0; idx < numDevices; idx++)
+    {
+        Ptr<NetDevice> dev = node->GetDevice(idx);
+        int32_t interfaceNum = ipv4->GetInterfaceForDevice(dev);
+
+        Ptr<CsmaNetDevice> csma = DynamicCast<CsmaNetDevice, NetDevice>(dev);
+        Ptr<LoopbackNetDevice> loop = DynamicCast<LoopbackNetDevice, NetDevice>(dev);
+
+        NS_LOG_DEBUG("\t dev: " << dev << " " << dev->GetTypeId());
+        if (!csma)
+        {
+            continue;
+        }
+
+        if (csma)
         {
             NS_LOG_DEBUG("\t csma: " << csma << " " << csma->GetTypeId());
             NS_LOG_DEBUG("\t interface num: " << interfaceNum);
@@ -130,6 +139,9 @@ SnicScheduler::AddNode(Ptr<Node> node)
                 NS_LOG_DEBUG("d=" << d);
                 if (isSnicNode)
                     forwardEdge->SetLDevice(snicDev);
+                else
+                    forwardEdge->SetLDevice(0);
+                // forwardEdge->Set
                 forwardEdge->SetRDevice(dev);
                 NS_LOG_DEBUG("sched: dev= " << d);
                 // backwardEdge->SetVertices(nextVertex, v);
@@ -142,11 +154,6 @@ SnicScheduler::AddNode(Ptr<Node> node)
 
             // see if we are attached to other csma netdevs
         }
-    }
-    if (v->GetVertexType() == SVertex::VertexTypeUnknown)
-    {
-        v->SetVertexType(SVertex::VertexTypeHost);
-        m_hostVertices.push_back(v);
     }
 }
 
@@ -286,6 +293,7 @@ SnicScheduler::PathIsValid(const SnicSchedulerHeader& header, Path_t path) const
         // if (nextEdge->GetRemainingBandwidth() >= DataRate(std::to_string(d) + "Gbps"))
         if (nextEdge->GetRemainingBandwidth() < demand)
         {
+            NS_LOG_DEBUG("edge out: " << nextEdge);
             return false;
         }
         // NS_LOG_DEBUG("PathIsValid: true");
@@ -314,14 +322,15 @@ SnicScheduler::AllocatePath(SnicHeader& snicHeader, SnicSchedulerHeader& schedHe
         m_resourceAllocated[flowId][EGRESS] = d;
         // Allocate(flowId, path, demand);
         nextEdge->AssignBandwidth(demand);
-        NS_LOG_DEBUG("D: " << d);
-        NS_LOG_DEBUG(nextEdge->GetRemainingBandwidth());
+        NS_LOG_DEBUG("allocating edge: " << nextEdge << " " << nextEdge->GetRemainingBandwidth());
+        // NS_LOG_DEBUG("D: " << d);
+        // NS_LOG_DEBUG(nextEdge->GetRemainingBandwidth());
 
         SnicRte rte;
         rte.SetNextHop(nextVertex->GetVertexId());
         rte.SetInterfaceNum(nextEdge->GetRInterfaceNum());
-        NS_LOG_DEBUG("rte l: " << nextEdge->GetLDevice());
-        NS_LOG_DEBUG("rte r: " << nextEdge->GetRDevice());
+        // NS_LOG_DEBUG("rte l: " << nextEdge->GetLDevice());
+        // NS_LOG_DEBUG("rte r: " << nextEdge->GetRDevice());
         rte.SetLDevice(nextEdge->GetLDevice());
         rte.SetRDevice(nextEdge->GetRDevice());
         rte.SetVertices((uint64_t)nextEdge->GetLVertex(), (uint64_t)nextEdge->GetRVertex());
@@ -469,6 +478,7 @@ SnicScheduler::Schedule(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader
     DumpEdges();
     // return true;
 
+    NS_LOG_DEBUG("paths size=" << paths.size());
     for (uint32_t i = 0; i < paths.size(); ++i)
     {
         Path_t path = paths[i];
@@ -545,6 +555,7 @@ SnicScheduler::Release(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader)
     // sort(paths.begin(), paths.end());
     //DumpEdges();
     // return true;
+    FlowId flowId(schedHeader);
 
     for (uint32_t i = 0; i < path.size() - 1; ++i)
     {
@@ -552,12 +563,14 @@ SnicScheduler::Release(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader)
         SVertex* nextVertex = path[i + 1];
         SEdge* nextEdge = v->GetEdgeTo(nextVertex);
 
-        FlowId flowId(schedHeader);
 
         NS_ASSERT_MSG(m_resourceAllocated.count(flowId) > 0, "can't find flow allocated??");
         double d = m_resourceAllocated[flowId][INGRESS];
         DataRate demand = DataRate(std::to_string(d) + "Gbps");
+        NS_LOG_DEBUG("before deallocating " << nextEdge->GetRemainingBandwidth());
+        NS_LOG_DEBUG("deallocating edge: " << nextEdge);
         nextEdge->DeallocateBandwidth(demand);
+        NS_LOG_DEBUG("after deallocating " << nextEdge->GetRemainingBandwidth());
         NS_LOG_DEBUG(demand);
 
 
@@ -565,9 +578,9 @@ SnicScheduler::Release(SnicHeader& snicHeader, SnicSchedulerHeader& schedHeader)
 
         // m_allPaths\c
         // FIXME maybe remove instead of setting to 0
-        m_resourceAllocated[flowId][INGRESS] = 0;
-        m_resourceAllocated[flowId][EGRESS] = 0;
     }
+    m_resourceAllocated[flowId][INGRESS] = 0;
+    m_resourceAllocated[flowId][EGRESS] = 0;
 }
 
 uint64_t
@@ -840,8 +853,8 @@ SEdge::GetRDevice() const
 std::ostream&
 operator<<(std::ostream& os, const SEdge& edge)
 {
-    os << " interfaceNum=" << edge.GetRInterfaceNum() << " left=" << *edge.GetLVertex()
-       << " \nright=" << *edge.GetRVertex();
+    os << " interfaceNum=" << edge.GetRInterfaceNum() << " left= 0x" << std::hex
+       << *edge.GetLVertex() << " \nright= 0x" << *edge.GetRVertex() << std::dec;
     return os;
 }
 

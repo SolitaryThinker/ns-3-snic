@@ -345,6 +345,12 @@ SnicWorkloadClient::SetFill(uint8_t* fill, uint32_t fillSize, uint32_t dataSize)
 }
 
 void
+SnicWorkloadClient::SetPktGen(PacketArrivalRateGen gen)
+{
+    m_interval_gen = gen;
+}
+
+void
 SnicWorkloadClient::ScheduleTransmit(Time dt)
 {
     NS_LOG_FUNCTION(this << dt);
@@ -405,15 +411,14 @@ SnicWorkloadClient::Send()
                                 << "m_currentpkt=" << m_currentFlowPkt);
         header.SetFlowId(m_currentFlow);
         m_currentFlowSize += m_size;
+        m_currentFlowPkt++;
         if (m_currentFlowPkt == m_flowPktCount)
         {
             // is last packet so we set the header accordingly
             header.SetIsLastInFlow(true);
         }
-        m_currentFlowPkt++;
     }
     p->AddHeader(header);
-    NS_LOG_DEBUG("testing wtf");
     // header.ClearRtes();
     Address localAddress;
     m_socket->GetSockName(localAddress);
@@ -476,7 +481,7 @@ SnicWorkloadClient::Send()
         if (m_useFlow)
         {
             // if (m_currentFlowSize > m_flowSize)
-            if (m_currentFlowPkt > m_flowPktCount)
+            if (m_currentFlowPkt >= m_flowPktCount)
             {
                 // new flow is needed
                 m_newFlow = true;

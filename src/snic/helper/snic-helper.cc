@@ -220,6 +220,7 @@ SnicHelper::Install(Ptr<Node> node, NetDeviceContainer c)
   NetDeviceContainer devs;
   Ptr<SnicNetDevice> dev = m_deviceFactory.Create<SnicNetDevice>();
   NS_LOG_LOGIC("**** Install SNIC device " << dev << " on node " << node->GetId());
+  dev->SetSnicId(node->GetId());
   devs.Add(dev);
   node->AddDevice(dev);
 

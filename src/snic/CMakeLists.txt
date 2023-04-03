@@ -20,6 +20,9 @@ build_lib(
                  model/snic-scheduler-header.cc
                  model/snic-scheduler.cc
                  utils/flow.cc
+                 utils/linear-memory-modeler.cc
+                 utils/memory-modeler.cc
+                 utils/packet-arrival-rate-file-gen.cc
                  utils/packet-arrival-rate-gen.cc
                  utils/ring-topology.cc
                  utils/statistic.cc
@@ -32,6 +35,9 @@ build_lib(
                  model/snic-scheduler-header.h
                  model/snic-scheduler.h
                  utils/flow.h
+                 utils/linear-memory-modeler.h
+                 utils/memory-modeler.h
+                 utils/packet-arrival-rate-file-gen.h
                  utils/packet-arrival-rate-gen.h
                  utils/ring-topology.h
                  utils/statistic.h

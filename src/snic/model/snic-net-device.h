@@ -55,6 +55,9 @@ class SnicNetDevice : public NetDevice
     SnicNetDevice(const SnicNetDevice&) = delete;
     SnicNetDevice& operator=(const SnicNetDevice&) = delete;
 
+    uint32_t GetSnicId() const;
+    void SetSnicId(uint32_t id);
+
     /**
      * \brief Add a 'port' to a snic device
      * \param NetDevice to add
@@ -514,6 +517,8 @@ class SnicNetDevice : public NetDevice
         Ptr<NetDevice> associatedPort; //!< port associated with the address
         Time expirationTime;           //!< time it takes for learned MAC state to expire
     };
+
+    uint32_t m_snicId;
 
     std::map<Mac48Address, LearnedState> m_learnState;   //!< Container for known address statuses
     Ptr<Node> m_node;                                    //!< Node owning this NetDevice

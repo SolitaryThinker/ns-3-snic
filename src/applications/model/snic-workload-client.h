@@ -120,6 +120,8 @@ class SnicWorkloadClient : public Application
      */
     void SetFill(uint8_t* fill, uint32_t fillSize, uint32_t dataSize);
 
+    void SetPktGen(PacketArrivalRateGen gen);
+
   protected:
     void DoDispose() override;
 

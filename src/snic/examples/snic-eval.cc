@@ -53,8 +53,8 @@ main(int argc, char* argv[])
     // LogComponentEnable("CsmaChannel", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("FlowId", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
-    // LogComponentEnable("SnicHeader", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SnicHeader", LOG_LEVEL_LOGIC);
     LogComponentEnable("Statistic", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
@@ -92,27 +92,32 @@ main(int argc, char* argv[])
 
     ApplicationContainer serverApps2 = workloadServer.Install(terminals.Get(0));
     serverApps2.Start(Seconds(1.0));
-    serverApps2.Stop(Seconds(8.0));
+    serverApps2.Stop(Seconds(20.0));
 
     SnicWorkloadClientHelper workloadClient(interfaces.GetAddress(0), 9);
-    workloadClient.SetAttribute("MaxPackets", UintegerValue(2000));
+    workloadClient.SetAttribute("MaxPackets", UintegerValue(4490));
     workloadClient.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
     workloadClient.SetAttribute("PacketSize", UintegerValue(450));
     // workloadClient.SetAttribute("PacketSize", UintegerValue(9));
     workloadClient.SetAttribute("UseFlow", BooleanValue(true));
     workloadClient.SetAttribute("FlowSize", UintegerValue(900));
-    workloadClient.SetAttribute("FlowPktCount", UintegerValue(2));
+    workloadClient.SetAttribute("FlowPktCount", UintegerValue(50));
+
+    // workloadClient.SetAttribute("Gen", FileGen("trace.txt"));
 
     // ApplicationContainer clientApps = workloadClient.Install(terminals.Get(2));
     ApplicationContainer clientApps2 = workloadClient.Install(terminals.Get(1));
     clientApps2.Start(Seconds(2.0));
+    auto client = clientApps2.Get(0);
+    PacketArrivalRateGen gen = PacketArrivalRateFileGen("trace.txt");
+    client.SetPktGen(pktGen);
     // clientApps2.Stop(Seconds(3.0));
 
     // Ptr<SnicWorkloadServer> server =
     // DynamicCast<SnicWorkloadServer, Application>(serverApps2.Get(0));
     // server->Reset();
     // clientApps2.Start(Seconds(3.1));
-    clientApps2.Stop(Seconds(8.0));
+    clientApps2.Stop(Seconds(20.0));
     //   clientApps.Start(Seconds(2.0));
     //   clientApps.Stop(Seconds(10.0));
 

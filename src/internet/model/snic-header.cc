@@ -22,7 +22,8 @@ SnicRte::SnicRte()
       m_leftDevice(0),
       m_rightDevice(0),
       m_leftVertex(0),
-      m_rightVertex(0)
+      m_rightVertex(0),
+      m_processed(false)
 {
 }
 
@@ -45,14 +46,14 @@ SnicRte::GetInstanceTypeId() const
 void
 SnicRte::Print(std::ostream& os) const
 {
-    os << " rte interfaceNum=" << m_interfaceNum << " ldev=" << m_leftDevice
-       << " rdev=" << m_rightDevice;
+    os << " rtep= " << m_processed << " interfaceNum=" << m_interfaceNum << " ldev= 0x" << std::hex
+       << m_leftDevice << " rdev= 0x" << m_rightDevice << std::dec;
 }
 
 uint32_t
 SnicRte::GetSerializedSize() const
 {
-    return 52;
+    return 53;
 }
 
 void
@@ -70,6 +71,7 @@ SnicRte::Serialize(Buffer::Iterator i) const
 
     i.WriteHtonU64(m_rightVertex);
     i.WriteHtonU64(m_leftVertex);
+    i.WriteU8(m_processed);
 }
 
 uint32_t
@@ -93,6 +95,7 @@ SnicRte::Deserialize(Buffer::Iterator i)
     m_rightDevice = i.ReadNtohU64();
     m_leftVertex = i.ReadNtohU64();
     m_rightVertex = i.ReadNtohU64();
+    m_processed = i.ReadU8();
 
     return GetSerializedSize();
 }
@@ -198,6 +201,18 @@ uint64_t
 SnicRte::GetRVertex() const
 {
     return m_rightVertex;
+}
+
+void
+SnicRte::SetProcessed(bool p)
+{
+    m_processed = p;
+}
+
+bool
+SnicRte::GetProcessed() const
+{
+    return m_processed;
 }
 
 std::ostream&
@@ -551,9 +566,9 @@ void
 SnicHeader::Print(std::ostream& os) const
 {
     os << "packetType: " << m_packetType << " flowId=" << m_flowId << " newflow=" << m_newFlow
-       << " seenSnic: " << m_hasSeenNic << " snic_nt: " << m_nt << ", payload: " << m_payload
-       << ", snic_length: " << m_payloadSize + GetSerializedSize() << " " << m_sourcePort << " > "
-       << m_destinationPort;
+       << " last= " << m_isLastInFlow << " seenSnic: " << m_hasSeenNic << " snic_nt: " << m_nt
+       << ", payload: " << m_payload << ", snic_length: " << m_payloadSize + GetSerializedSize()
+       << " " << m_sourcePort << " > " << m_destinationPort;
     for (auto iter = m_rteList.begin(); iter != m_rteList.end(); ++iter)
     {
         os << "\n" << *iter;

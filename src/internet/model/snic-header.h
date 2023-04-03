@@ -126,6 +126,9 @@ class SnicRte : public Header
      */
     Ipv4Address GetNextHop() const;
 
+    void SetProcessed(bool p);
+    bool GetProcessed() const;
+
   private:
     uint16_t m_tag;        //!< Route tag.
     Ipv4Address m_prefix;  //!< Advertised prefix.
@@ -139,6 +142,7 @@ class SnicRte : public Header
 
     uint64_t m_leftVertex;
     uint64_t m_rightVertex;
+    bool m_processed;
 };
 
 std::ostream& operator<<(std::ostream& os, const SnicRte& h);

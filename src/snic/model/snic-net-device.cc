@@ -67,7 +67,8 @@ SnicNetDevice::GetTypeId()
 }
 
 SnicNetDevice::SnicNetDevice()
-    : m_node(nullptr),
+    : m_snicId(0),
+      m_node(nullptr),
       m_ifIndex(0),
       m_mtu(0xffff),
       m_isScheduler(false),
@@ -82,6 +83,18 @@ SnicNetDevice::SnicNetDevice()
 SnicNetDevice::~SnicNetDevice()
 {
     NS_LOG_FUNCTION_NOARGS();
+}
+
+uint32_t
+SnicNetDevice::GetSnicId() const
+{
+    return m_snicId;
+}
+
+void
+SnicNetDevice::SetSnicId(uint32_t id)
+{
+    m_snicId = id;
 }
 
 void
@@ -597,7 +610,7 @@ SnicNetDevice::HandleIpv4Packet(Ptr<NetDevice> incomingPort,
                                 protocol,
                                 src48,
                                 dst48);
-        NS_ASSERT_MSG(false, "done release");
+        // NS_ASSERT_MSG(false, "done release");
         NS_LOG_DEBUG("got release");
         break;
     }
@@ -639,6 +652,7 @@ SnicNetDevice::ReceiveFromDevice(Ptr<NetDevice> incomingPort,
     Packet::EnablePrinting();
     NS_LOG_FUNCTION(this << incomingPort << protocol);
     NS_LOG_DEBUG("uid " << packet->GetUid());
+    NS_LOG_DEBUG("snic id: " << GetSnicId());
     // NS_LOG_DEBUG("id is " << m_node->GetId());
 
     Mac48Address src48 = Mac48Address::ConvertFrom(src);
@@ -824,25 +838,37 @@ SnicNetDevice::Forward(Ptr<NetDevice> incomingPort,
     Ipv4Header ipv4Header;
     SnicHeader snicHeader;
     packet->RemoveHeader(ipv4Header);
-    packet->PeekHeader(snicHeader);
-    packet->AddHeader(ipv4Header);
+    packet->RemoveHeader(snicHeader);
     std::list<SnicRte> rteList = snicHeader.GetRteList();
+
+    bool hasUnprocessedRte = false;
+
+    Ptr<NetDevice> nextDevice = nullptr;
+
     NS_LOG_DEBUG("rte size=" << rteList.size());
     if (snicHeader.GetUseRouting() && rteList.size() > 0)
     {
         // find next rte entry.
         for (auto it = rteList.begin(); it != rteList.end(); ++it)
         {
-            // NS_LOG_DEBUG("l= " << (*it).GetLDevice());
-            // NS_LOG_DEBUG("r= " << (*it).GetRDevice());
-            // NS_LOG_DEBUG(this);
-            // Ptr<NetDevice> t = this;
-            // NS_LOG_DEBUG(t);
+            SnicRte& rte = *it;
+            // NS_LOG_DEBUG("proc= " << rte.GetProcessed());
+            // NS_LOG_DEBUG("l= " << rte.GetLDevice());
+            // NS_LOG_DEBUG("r= " << rte.GetRDevice());
+            // NS_LOG_DEBUG("this= " << this);
             // NS_LOG_DEBUG("======");
             //  if ((*it).GetLDevice() == this)
             //{
             //  NS_LOG_DEBUG("found ourself in rte list");
             // }
+
+            // skip processed rte
+            if (rte.GetProcessed())
+            {
+                continue;
+            }
+            hasUnprocessedRte = true;
+            NS_LOG_DEBUG("Not processed rte");
             for (std::vector<Ptr<NetDevice>>::iterator iter = m_ports.begin();
                  iter != m_ports.end();
                  iter++)
@@ -851,17 +877,48 @@ SnicNetDevice::Forward(Ptr<NetDevice> incomingPort,
                 if (port == (*it).GetRDevice())
                 {
                     NS_LOG_DEBUG("found in imp list");
-                    PipelinedSendFrom(port, packet->Copy(), src, dst, protocol);
-                    return;
+                    rte.SetProcessed(true);
+                    nextDevice = port;
+
+                    snicHeader.SetRteList(rteList);
+                    break;
                 }
             }
+            if (nextDevice)
+            {
+                break;
+            }
+            else
+            {
+                NS_ASSERT_MSG(false, "didn't find a device for unprocessed rte");
+            }
         }
-        NS_ASSERT("didn't find rte");
+
+        packet->AddHeader(snicHeader);
+        packet->AddHeader(ipv4Header);
+        if (hasUnprocessedRte == false)
+        {
+            NS_LOG_DEBUG("last hop");
+            ForwardUnicast(incomingPort, packet, protocol, src, dst);
+            return;
+        }
+        else if (nextDevice)
+        {
+            PipelinedSendFrom(nextDevice, packet->Copy(), src, dst, protocol);
+            return;
+        }
+        else
+        {
+            NS_ASSERT_MSG(false, "didn't find rte");
+        }
+        NS_ASSERT_MSG(false, "shouldn't be reached");
     }
     else
     {
-        ForwardUnicast(incomingPort, packet, protocol, src, dst);
         NS_ASSERT("no rteList");
+        packet->AddHeader(snicHeader);
+        packet->AddHeader(ipv4Header);
+        ForwardUnicast(incomingPort, packet, protocol, src, dst);
     }
 }
 
@@ -989,6 +1046,10 @@ SnicNetDevice::HandleAllocationResponse(Ipv4Header& ipv4Header,
         // NS_LOG_DEBUG(pendingSnicHeader);
 
         Forward(entry->GetIncomingPort(), pending, entry->GetProtocol(), src48, dst48);
+        if (pendingSnicHeader.IsLastInFlow())
+        {
+            AllocationRelease(incomingPort, pending, protocol, src, dst);
+        }
         pending = entry->DequeuePending();
     }
     entry->MarkActive();
