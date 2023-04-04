@@ -7,6 +7,7 @@
 #include "ns3/ptr.h"
 #include "ns3/traced-callback.h"
 
+#include <fstream>
 #include <queue>
 
 namespace ns3
@@ -38,6 +39,8 @@ class SnicWorkloadServer : public Application
     ~SnicWorkloadServer() override;
     void Reset();
 
+    void SetOutputFile(std::string name);
+
   protected:
     void DoDispose() override;
 
@@ -66,6 +69,8 @@ class SnicWorkloadServer : public Application
     Time m_lastPacket;
     Time m_last5Packets;
     std::queue<Time> m_lastTimes;
+    std::string m_outputFileName;
+    std::ofstream m_outputFile;
 
     /// Callbacks for tracing the packet Rx events
     TracedCallback<Ptr<const Packet>> m_rxTrace;

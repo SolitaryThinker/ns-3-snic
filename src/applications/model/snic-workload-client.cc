@@ -345,7 +345,7 @@ SnicWorkloadClient::SetFill(uint8_t* fill, uint32_t fillSize, uint32_t dataSize)
 }
 
 void
-SnicWorkloadClient::SetPktGen(PacketArrivalRateGen gen)
+SnicWorkloadClient::SetPktGen(Ptr<PacketArrivalRateGen> gen)
 {
     m_interval_gen = gen;
 }
@@ -480,8 +480,17 @@ SnicWorkloadClient::Send()
     {
         if (m_useFlow)
         {
-            // if (m_currentFlowSize > m_flowSize)
-            if (m_currentFlowPkt >= m_flowPktCount)
+            if (m_interval_gen)
+            {
+                // if (m_currentFlowPkt >= m_interval_gen->())
+                if (m_currentFlowPkt >= 1000)
+                {
+                    m_newFlow = true;
+                    m_currentFlowSize = 0;
+                    m_currentFlowPkt = 0;
+                }
+            }
+            else if (m_currentFlowPkt >= m_flowPktCount)
             {
                 // new flow is needed
                 m_newFlow = true;
@@ -490,8 +499,13 @@ SnicWorkloadClient::Send()
                 // nextInterval =
             }
         }
-        // Time nextInterval = m_interval_gen.NextInterval();
         Time nextInterval = m_interval;
+        if (m_interval_gen)
+        {
+            NS_LOG_DEBUG("using generator");
+            nextInterval = m_interval_gen->NextInterval();
+        }
+        // Time nextInterval = m_interval_gen.NextInterval();
         double tput = (8 * m_size) / nextInterval.GetNanoSeconds();
         NS_LOG_INFO("scheduling transmit tput: " << m_dataSize << ":"
                                                  << nextInterval.GetNanoSeconds());

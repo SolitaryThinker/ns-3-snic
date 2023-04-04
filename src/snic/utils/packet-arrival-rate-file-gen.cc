@@ -51,15 +51,23 @@ PacketArrivalRateFileGen::PacketArrivalRateFileGen(std::string fileName)
       m_currentIdx(0)
 
 {
+    NS_LOG_FUNCTION(this);
     std::ifstream file;
     file.open(fileName);
 
     std::string line;
     if (file.is_open())
     {
+        getline(file, line);
+        uint64_t n = std::stoi(line);
+        getline(file, line);
+        double avg = std::stod(line);
+        NS_LOG_DEBUG(n);
+        NS_LOG_DEBUG(avg);
         while (getline(file, line))
         {
-            NS_LOG_DEBUG(line);
+            NS_LOG_DEBUG("line: " << line);
+            m_intervals.push_back(std::stoi(line));
         }
     }
     file.close();

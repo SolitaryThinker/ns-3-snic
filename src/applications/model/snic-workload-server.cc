@@ -46,6 +46,7 @@ SnicWorkloadServer::GetTypeId()
 }
 
 SnicWorkloadServer::SnicWorkloadServer()
+    : m_outputFileName("")
 {
     NS_LOG_FUNCTION(this);
 }
@@ -63,6 +64,13 @@ SnicWorkloadServer::Reset()
     NS_LOG_FUNCTION_NOARGS();
     m_numReceived = 0;
     m_uids.clear();
+}
+
+void
+SnicWorkloadServer::SetOutputFile(std::string name)
+{
+    NS_LOG_FUNCTION_NOARGS();
+    m_outputFileName = name;
 }
 
 void
@@ -127,12 +135,21 @@ SnicWorkloadServer::StartApplication()
 
     m_socket->SetRecvCallback(MakeCallback(&SnicWorkloadServer::HandleRead, this));
     m_socket6->SetRecvCallback(MakeCallback(&SnicWorkloadServer::HandleRead, this));
+    if (m_outputFileName != "")
+    {
+        m_outputFile.open(m_outputFileName);
+    }
 }
 
 void
 SnicWorkloadServer::StopApplication()
 {
     NS_LOG_FUNCTION(this);
+
+    if (m_outputFileName != "")
+    {
+        m_outputFile.close();
+    }
 
     if (m_socket)
     {
@@ -172,6 +189,7 @@ SnicWorkloadServer::HandleRead(Ptr<Socket> socket)
             {
                 latency = currentTime - m_lastPacket;
                 NS_LOG_INFO("lat: " << latency << " " << packet->GetSize());
+                m_outputFile << latency << std::endl;
                 m_lastTimes.push(latency);
                 m_avgTotal += latency;
             }

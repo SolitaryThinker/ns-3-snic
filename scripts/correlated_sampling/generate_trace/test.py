@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 num_samples = 400
 num_phases = 20
 points_per_phase = 50
-desire = float(input("enter desired corre:"))
+# desire = float(input("enter desired corre:"))
+desire = .55
 
 def calculate_c(r):
     c = cholesky(r, lower=True)
@@ -110,7 +111,7 @@ for idx, loc1 in enumerate([50, 75]):
         # x[0] = generate_points(means, 0, loc2)
         # x[1] = generate_points(means, 1, loc2)
         # x[1] = norm.rvs(loc=loc2, scale=std, size=num_phases*points_per_phase)
-        print(correlation, loc2)
+        # print(correlation, loc2)
         std = 1
         var1 = pow(std,2)
         var2 = pow(std,2)
@@ -139,9 +140,13 @@ for idx, loc1 in enumerate([50, 75]):
         if correlation == desire:
             print('dumping', desire)
             for idx, values in enumerate(correlated_x):
-                with open("trace_"+idx+".txt",'w') as fi:
+                with open("trace_"+str(idx)+".txt",'w') as fi:
+                    fi.write(str(len(values)))
+                    fi.write('\n')
+                    fi.write(str(np.average(values)))
+                    fi.write('\n')
                     for v in values:
-                        fi.write(v+"\n")
+                        fi.write(str(round(v))+"\n")
         # print(r)
         """
         if correlation == 0.9:

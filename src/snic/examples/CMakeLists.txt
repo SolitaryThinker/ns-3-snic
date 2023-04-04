@@ -97,3 +97,13 @@ build_lib_example(
         ${libcsma}
         ${libinternet}
 )
+
+build_lib_example(
+    NAME snic-eval
+    SOURCE_FILES snic-eval.cc
+    LIBRARIES_TO_LINK
+        ${libsnic}
+        ${libapplications}
+        ${libcsma}
+        ${libinternet}
+)

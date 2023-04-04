@@ -120,7 +120,7 @@ class SnicWorkloadClient : public Application
      */
     void SetFill(uint8_t* fill, uint32_t fillSize, uint32_t dataSize);
 
-    void SetPktGen(PacketArrivalRateGen gen);
+    void SetPktGen(Ptr<PacketArrivalRateGen> gen);
 
   protected:
     void DoDispose() override;
@@ -170,7 +170,7 @@ class SnicWorkloadClient : public Application
     Address m_peerAddress; //!< Remote peer address
     uint16_t m_peerPort;   //!< Remote peer port
     EventId m_sendEvent;   //!< Event to send the next packet
-    PacketArrivalRateGen m_interval_gen;
+    Ptr<PacketArrivalRateGen> m_interval_gen;
 
     /// Callbacks for tracing the packet Tx events
     TracedCallback<Ptr<const Packet>> m_txTrace;

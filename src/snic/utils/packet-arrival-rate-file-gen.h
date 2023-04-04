@@ -3,6 +3,7 @@
 
 #include "ns3/nstime.h"
 #include "ns3/object.h"
+#include "ns3/packet-arrival-rate-gen.h"
 
 #include <random>
 #include <string>
@@ -10,7 +11,7 @@
 namespace ns3
 {
 
-class PacketArrivalRateFileGen : public Object
+class PacketArrivalRateFileGen : public PacketArrivalRateGen
 {
   public:
     static TypeId GetTypeId();
@@ -19,13 +20,13 @@ class PacketArrivalRateFileGen : public Object
     PacketArrivalRateFileGen(std::string fileName);
     ~PacketArrivalRateFileGen();
 
-    Time NextInterval();
+    Time NextInterval() override;
 
     // void SetAverage(uint64_t avg);
     // void SetStd(uint64_t std);
 
   private:
-    bool m_isPeaking;
+    // bool m_isPeaking;
     std::string m_fileName;
     std::vector<uint32_t> m_intervals;
     uint64_t m_currentIdx;

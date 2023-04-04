@@ -17,7 +17,7 @@ class PacketArrivalRateGen : public Object
     PacketArrivalRateGen();
     PacketArrivalRateGen(uint64_t avg, uint64_t std);
     ~PacketArrivalRateGen();
-    Time NextInterval();
+    virtual Time NextInterval();
 
     void SetAverage(uint64_t avg);
     void SetStd(uint64_t std);
