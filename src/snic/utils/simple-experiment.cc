@@ -1,21 +1,34 @@
 #include "simple-experiment.h"
 
+#include "ns3/applications-module.h"
+#include "ns3/core-module.h"
+#include "ns3/csma-module.h"
+#include "ns3/internet-module.h"
+#include "ns3/network-module.h"
+#include "ns3/ring-topology.h"
+#include "ns3/snic-helper.h"
+#include "ns3/snic-net-device.h"
+
 namespace ns3
 {
 
-SimpleExperiment::Experiment()
+NS_LOG_COMPONENT_DEFINE("SimpleExperiment");
+NS_OBJECT_ENSURE_REGISTERED(SimpleExperiment);
+
+SimpleExperiment::SimpleExperiment(uint32_t id, std::string prefix)
+    : Experiment(id, prefix)
 {
 }
 
-SimpleExperiment::~Experiment()
+SimpleExperiment::~SimpleExperiment()
 {
 }
 
-SimpleExperiment::Initialize()
+void
+SimpleExperiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValue>>> variables,
+                             std::map<std::string, uint32_t> indexes)
 {
     // m_packetSize =
-
-    bool verbose = true;
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
@@ -41,11 +54,6 @@ SimpleExperiment::Initialize()
     LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_LOGIC);
     LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_LOGIC);
-
-    CommandLine cmd(__FILE__);
-    cmd.AddValue("verbose", "Tell application to log if true", verbose);
-
-    cmd.Parse(argc, argv);
 
     Time::SetResolution(Time::NS);
 
@@ -73,11 +81,16 @@ SimpleExperiment::Initialize()
     SnicWorkloadClientHelper workloadClient(interfaces.GetAddress(0), 9);
     workloadClient.SetAttribute("MaxPackets", UintegerValue(990));
     workloadClient.SetAttribute("Interval", TimeValue(NanoSeconds(4.0)));
-    workloadClient.SetAttribute("PacketSize", UintegerValue(450));
-    // workloadClient.SetAttribute("PacketSize", UintegerValue(9));
+    // workloadClient.SetAttribute("PacketSize", UintegerValue(450));
+    //  workloadClient.SetAttribute("PacketSize", UintegerValue(9));
     workloadClient.SetAttribute("UseFlow", BooleanValue(true));
     workloadClient.SetAttribute("FlowSize", UintegerValue(900));
     workloadClient.SetAttribute("FlowPktCount", UintegerValue(990));
+
+    for (const auto& kv : variables)
+    {
+        workloadClient.SetAttribute(kv.first, *kv.second[indexes[kv.first]]);
+    }
 
     // workloadClient.SetAttribute("Gen", FileGen("trace.txt"));
 
@@ -103,7 +116,7 @@ SimpleExperiment::Initialize()
     NS_LOG_INFO("Configure Tracing.");
     NetDeviceContainer snics = ringHelper.GetSnics();
     // snics.Get(0)->TraceConnectWithoutContext("NumL4Packets", MakeCallback(&IntTrace));
-    snics.Get(0)->TraceConnectWithoutContext("SchedTrace", MakeCallback(&SchedTrace));
+    // snics.Get(0)->TraceConnectWithoutContext("SchedTrace", MakeCallback(&SchedTrace));
     // snics.Get(0)->TraceConnect("SchedTrace", MakeCallback(&SchedTraceC));
 
     //
@@ -125,6 +138,7 @@ SimpleExperiment::Initialize()
 
 }
 
+void
 SimpleExperiment::Run()
 {
     NS_ASSERT(m_initialized);
@@ -132,7 +146,5 @@ SimpleExperiment::Run()
     Simulator::Run();
     Simulator::Destroy();
     NS_LOG_INFO("Done.");
-
-    NS_LOG_INFO("totalSchedPackets: " << totalSchedPackets);
 }
 } // namespace ns3

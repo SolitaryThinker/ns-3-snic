@@ -16,8 +16,10 @@ Experiment::~Experiment()
 }
 
 void
-Experiment::Initialize()
+Experiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValue>>> variables,
+                       std::map<std::string, uint32_t> indexes)
 {
+    NS_LOG_FUNCTION(this);
 }
 
 void

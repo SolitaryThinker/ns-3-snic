@@ -17,12 +17,13 @@ class Benchmark : public Object
     void Initialize();
     void Run();
 
-    virtual void AddVariable(std::string varName, std::vector<uint32_t> values);
+    virtual void AddVariable(std::string varName, std::vector<Ptr<AttributeValue>> values);
 
   private:
     std::string m_outputFileNamePrefix;
     std::list<Experiment> m_experiments;
-    std::map<std::string, std::vector<uint32_t>> m_variables;
+    std::map<std::string, std::vector<Ptr<AttributeValue>>> m_variables;
+    std::map<std::string, bool> m_experimentsAdded;
     uint32_t m_numExperiments;
 };
 } // namespace ns3

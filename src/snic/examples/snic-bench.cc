@@ -50,9 +50,9 @@ main(int argc, char* argv[])
     NS_LOG_INFO("Running Benchmark");
     Benchmark benchmark = Benchmark("singe-flow");
 
-    std::vector<uint32_t> values;
-    values.push_back(100);
-    values.push_back(400);
+    std::vector<Ptr<AttributeValue>> values;
+    values.push_back(Create<UintegerValue>(100));
+    values.push_back(Create<UintegerValue>(400));
     benchmark.AddVariable("PacketSize", values);
 
     benchmark.Initialize();

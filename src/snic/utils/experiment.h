@@ -14,7 +14,8 @@ class Experiment : public Object
     Experiment(uint32_t id, std::string prefix);
     ~Experiment();
 
-    virtual void Initialize();
+    virtual void Initialize(std::map<std::string, std::vector<Ptr<AttributeValue>>> variables,
+                            std::map<std::string, uint32_t> indexes);
     virtual void Run();
 
     uint16_t GetPacketSize(uint64_t idx);
@@ -24,9 +25,11 @@ class Experiment : public Object
 
     std::string GetName() const;
 
+  protected:
+    bool m_initialized;
+
   private:
     uint32_t m_id;
-    bool m_initialized;
     std::string m_outputFileName;
 };
 

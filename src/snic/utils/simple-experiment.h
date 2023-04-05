@@ -1,21 +1,21 @@
-#ifndef EXPERIMENT_H
-#define EXPERIMENT_H
+#ifndef SIMPLE_EXPERIMENT_H
+#define SIMPLE_EXPERIMENT_H
 
 #include "ns3/experiment.h"
 #include "ns3/object.h"
+#include "ns3/simulator.h"
 
 namespace ns3
 {
-NS_LOG_COMPONENT_DEFINE("SimpleExperiment");
-NS_OBJECT_ENSURE_REGISTERED(SimpleExperiment);
 
 class SimpleExperiment : public Experiment
 {
   public:
-    SimpleExperiment();
+    SimpleExperiment(uint32_t id, std::string prefix);
     ~SimpleExperiment();
 
-    virtual void Initialize();
+    virtual void Initialize(std::map<std::string, std::vector<Ptr<AttributeValue>>> variables,
+                            std::map<std::string, uint32_t> indexes) override;
     virtual void Run() override;
 
   private:
@@ -23,4 +23,4 @@ class SimpleExperiment : public Experiment
 };
 
 } // namespace ns3
-#endif // EXPERIMENT_H
+#endif // SIMPLE_EXPERIMENT_H
