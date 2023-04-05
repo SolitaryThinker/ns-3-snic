@@ -19,6 +19,8 @@ build_lib(
                  model/packet-buffer.cc
                  model/snic-scheduler-header.cc
                  model/snic-scheduler.cc
+                 utils/benchmark.cc
+                 utils/experiment.cc
                  utils/flow.cc
                  utils/linear-memory-modeler.cc
                  utils/memory-modeler.cc
@@ -34,6 +36,9 @@ build_lib(
                  model/packet-buffer.h
                  model/snic-scheduler-header.h
                  model/snic-scheduler.h
+                 utils/benchmark.h
+                 utils/experiment.h
+                 #utils/experiment-variable.h
                  utils/flow.h
                  utils/linear-memory-modeler.h
                  utils/memory-modeler.h

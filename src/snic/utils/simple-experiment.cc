@@ -1,52 +1,20 @@
+#include "simple-experiment.h"
 
-#include "ns3/applications-module.h"
-#include "ns3/core-module.h"
-#include "ns3/csma-module.h"
-#include "ns3/internet-module.h"
-#include "ns3/network-module.h"
-#include "ns3/ring-topology.h"
-#include "ns3/snic-helper.h"
-#include "ns3/snic-net-device.h"
-
-using namespace ns3;
-
-NS_LOG_COMPONENT_DEFINE("SnicExample");
-uint64_t totalSchedPackets = 0;
-Time prev;
-
-void
-IntTrace(std::string context, uint64_t old, uint64_t newv)
+namespace ns3
 {
-    NS_LOG_DEBUG("traced req " << context << " " << old << " to " << newv);
-    Time now = Simulator::Now();
-    NS_LOG_DEBUG("sim time: " << now - prev);
-    prev = now;
 
-
-    totalSchedPackets = newv;
+SimpleExperiment::Experiment()
+{
 }
 
-Statistic schedStat;
-
-void
-SchedTraceC(std::string context, Ptr<const SnicNetDevice> dev, Ptr<const Packet> pkt)
+SimpleExperiment::~Experiment()
 {
-    NS_LOG_DEBUG(context << " isSched=" << dev->IsScheduler()
-                         << " numSchedReq=" << dev->GetNumSchedReqs());
 }
 
-void
-SchedTrace(Ptr<const SnicNetDevice> dev, Ptr<const Packet> pkt)
+SimpleExperiment::Initialize()
 {
-    NS_LOG_DEBUG("isSched=" << dev->IsScheduler() << " numSchedReq=" << dev->GetNumSchedReqs()
-                            << " " << pkt->GetUid());
-    schedStat.AddPacket(pkt->GetSize());
-}
+    // m_packetSize =
 
-/* two snics using snic apps and sockets */
-int
-main(int argc, char* argv[])
-{
     bool verbose = true;
 
     LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
@@ -97,7 +65,6 @@ main(int argc, char* argv[])
     Ptr<SnicWorkloadServer> server =
         DynamicCast<SnicWorkloadServer, Application>(serverApps.Get(0));
     // Ptr<PacketArrivalRateGen> gen = Create<PacketArrivalRateFileGen>("trace.txt");
-    NS_LOG_DEBUG("server");
     server->SetOutputFile("output.txt");
 
     serverApps.Start(Seconds(1.0));
@@ -156,13 +123,16 @@ main(int argc, char* argv[])
     //
     csmaHelper.EnablePcapAll("csma-bridge", false);
 
+}
 
+SimpleExperiment::Run()
+{
+    NS_ASSERT(m_initialized);
     NS_LOG_INFO("Run Simulation.");
     Simulator::Run();
     Simulator::Destroy();
     NS_LOG_INFO("Done.");
 
     NS_LOG_INFO("totalSchedPackets: " << totalSchedPackets);
-
-    return 0;
 }
+} // namespace ns3
