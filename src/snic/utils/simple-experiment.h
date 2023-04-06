@@ -19,7 +19,6 @@ class SimpleExperiment : public Experiment
     virtual void Run() override;
 
   private:
-    std::string m_outputFileName;
 };
 
 } // namespace ns3

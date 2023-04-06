@@ -47,12 +47,16 @@ SchedTrace(Ptr<const SnicNetDevice> dev, Ptr<const Packet> pkt)
 int
 main(int argc, char* argv[])
 {
+    Time::SetResolution(Time::NS);
+    // LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("Benchmark", LOG_LEVEL_LOGIC);
+    LogComponentEnable("SimpleExperiment", LOG_LEVEL_LOGIC);
     NS_LOG_INFO("Running Benchmark");
-    Benchmark benchmark = Benchmark("singe-flow");
+    Benchmark benchmark = Benchmark("single-flow");
 
     std::vector<Ptr<AttributeValue>> values;
-    values.push_back(Create<UintegerValue>(100));
     values.push_back(Create<UintegerValue>(400));
+    values.push_back(Create<UintegerValue>(500));
     benchmark.AddVariable("PacketSize", values);
 
     benchmark.Initialize();

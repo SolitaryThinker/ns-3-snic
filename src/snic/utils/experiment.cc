@@ -7,7 +7,7 @@ NS_OBJECT_ENSURE_REGISTERED(Experiment);
 
 Experiment::Experiment(uint32_t id, std::string prefix)
     : m_id(id),
-      m_outputFileName(std::to_string(id) + prefix)
+      m_outputFileName(prefix + "_" + std::to_string(id) + ".txt")
 {
 }
 

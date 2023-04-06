@@ -27,10 +27,10 @@ class Experiment : public Object
 
   protected:
     bool m_initialized;
+    std::string m_outputFileName;
 
   private:
     uint32_t m_id;
-    std::string m_outputFileName;
 };
 
 } // namespace ns3

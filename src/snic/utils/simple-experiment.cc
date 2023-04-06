@@ -28,34 +28,32 @@ void
 SimpleExperiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValue>>> variables,
                              std::map<std::string, uint32_t> indexes)
 {
+    NS_LOG_FUNCTION(this);
     // m_packetSize =
 
-    LogComponentEnable("SnicExample", LOG_LEVEL_LOGIC);
     // LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
     // LogComponentEnable("CsmaChannel", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("DataRate", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("FlowId", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
-    LogComponentEnable("PacketArrivalRateFileGen", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicHeader", LOG_LEVEL_LOGIC);
-    LogComponentEnable("Statistic", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicSchedulerHeader", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("PacketArrivalRateFileGen", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicHeader", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("Statistic", LOG_LEVEL_LOGIC);
     // LogComponentEnable("PacketBuffer", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicHelper", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("SnicChannel", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Node", LOG_LEVEL_LOGIC);
     // LogComponentEnable("ArpL3Protocol", LOG_LEVEL_LOGIC);
     // LogComponentEnable("ArpCache", LOG_LEVEL_LOGIC);
     //  LogComponentEnable("SnicStackHelper", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicScheduler", LOG_LEVEL_LOGIC);
     // LogComponentEnable("Ipv4AddressHelper", LOG_LEVEL_LOGIC);
     //    LogComponentEnable("Ipv4", LOG_LEVEL_LOGIC);
     //   LogComponentEnable("Ipv4L3Protocol", LOG_LEVEL_LOGIC);
     // LogComponentEnable("SnicL4Protocol", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_LOGIC);
-    LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_LOGIC);
-
-    Time::SetResolution(Time::NS);
+    // LogComponentEnable("SnicNetDevice", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicWorkloadClientApplication", LOG_LEVEL_LOGIC);
+    // LogComponentEnable("SnicWorkloadServerApplication", LOG_LEVEL_LOGIC);
 
     RingTopologyHelper ringHelper = RingTopologyHelper(4, 1, 0);
 
@@ -73,7 +71,8 @@ SimpleExperiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValu
     Ptr<SnicWorkloadServer> server =
         DynamicCast<SnicWorkloadServer, Application>(serverApps.Get(0));
     // Ptr<PacketArrivalRateGen> gen = Create<PacketArrivalRateFileGen>("trace.txt");
-    server->SetOutputFile("output.txt");
+    NS_LOG_DEBUG(m_outputFileName);
+    server->SetOutputFile(m_outputFileName);
 
     serverApps.Start(Seconds(1.0));
     serverApps.Stop(Seconds(20.0));
@@ -134,17 +133,18 @@ SimpleExperiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValu
     // and can be read by the "tcpdump -r" command (use "-tt" option to
     // display timestamps correctly)
     //
-    csmaHelper.EnablePcapAll("csma-bridge", false);
 
+    csmaHelper.EnablePcapAll("csma-bridge", false);
+    NS_LOG_FUNCTION(this);
+    // NS_ASSERT(m_initialized);
+    NS_LOG_INFO("Run Simulation.");
+    Simulator::Run();
+    Simulator::Destroy();
+    NS_LOG_INFO("Done.");
 }
 
 void
 SimpleExperiment::Run()
 {
-    NS_ASSERT(m_initialized);
-    NS_LOG_INFO("Run Simulation.");
-    Simulator::Run();
-    Simulator::Destroy();
-    NS_LOG_INFO("Done.");
 }
 } // namespace ns3

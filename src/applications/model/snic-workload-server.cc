@@ -137,6 +137,7 @@ SnicWorkloadServer::StartApplication()
     m_socket6->SetRecvCallback(MakeCallback(&SnicWorkloadServer::HandleRead, this));
     if (m_outputFileName != "")
     {
+        std::cout << m_outputFileName << std::endl;
         m_outputFile.open(m_outputFileName);
     }
 }
