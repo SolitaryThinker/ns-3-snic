@@ -56,25 +56,28 @@ Benchmark::Run()
 
     for (uint32_t n = 0; n < m_numExperiments; ++n)
     {
-        SimpleExperiment e = SimpleExperiment(n, m_outputFileNamePrefix);
+        SimpleExperiment experiment = SimpleExperiment(n, m_outputFileNamePrefix);
         // XXX hack
         for (const auto& kv : m_variables)
         {
             indexes[kv.first] = n;
         }
 
-        e.Initialize(m_variables, indexes);
-        e.Run();
-        // m_experiments.push_back(e);
+        experiment.Initialize(m_variables, indexes);
+        experiment.Run();
+        // m_experiments.push_back(experiment);
     }
 }
 
 void
-Benchmark::AddVariable(std::string varName, std::vector<Ptr<AttributeValue>> values)
+// Benchmark::AddVariable(std::string varName, std::vector<Ptr<AttributeValue>> values)
+Benchmark::AddVariable(ExperimentVariable var)
 {
-    NS_LOG_FUNCTION(this << varName);
+    std::string varName = var.GetName();
+    NS_LOG_FUNCTION(this << var.GetName());
     // NS_ASSERT_MSG(values.size() == m_numExperiments, "not enough values for every experiment");
-    m_variables[varName] = values;
+    // m_variables[varName] = values;
+    m_variables.push_back(var);
     if (m_numExperiments == 0)
     {
         m_numExperiments = values.size();

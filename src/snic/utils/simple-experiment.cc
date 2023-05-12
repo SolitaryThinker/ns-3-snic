@@ -29,6 +29,7 @@ SimpleExperiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValu
                              std::map<std::string, uint32_t> indexes)
 {
     NS_LOG_FUNCTION(this);
+    std::ofstream outputFile;
     // m_packetSize =
 
     // LogComponentEnable("CsmaNetDevice", LOG_LEVEL_LOGIC);
@@ -86,10 +87,17 @@ SimpleExperiment::Initialize(std::map<std::string, std::vector<Ptr<AttributeValu
     workloadClient.SetAttribute("FlowSize", UintegerValue(900));
     workloadClient.SetAttribute("FlowPktCount", UintegerValue(990));
 
+    outputFile.open(m_outputFileName);
+
     for (const auto& kv : variables)
     {
+        std::string varName = kv.GetName();
+        std::vector<Ptr<AttributeValue>> values = kv.GetValues();
         workloadClient.SetAttribute(kv.first, *kv.second[indexes[kv.first]]);
+        outputFile << kv.first << ":" << (*kv.second[indexes[kv.first]]).SerializeToString()
+                   << "\n";
     }
+    outputFile << "done\n";
 
     // workloadClient.SetAttribute("Gen", FileGen("trace.txt"));
 

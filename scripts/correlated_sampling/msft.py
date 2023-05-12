@@ -9,11 +9,81 @@ from scipy.stats import norm
 import matplotlib.pyplot as plt
 #import plot, show, axis, subplot, xlabel, ylabel, grid
 
+class Distribution:
+    """represents a distinct distribution function with unique parameters.
+    Call generate(n) to generate n points from the distribution
+    """
+    def __init__(self, params, func):
+        self.params = params
+        self.dist = func
+        # self.loc = loc
+        # self.scale = scale
+
+    def generate(self, n):
+        values = self.dist(self.params, n)
+
+        # make sure it is greater than 0
+        # XXX
+        values = list(map(lambda v: max(0, v), values))
+        return values
+
+    # @property
+    # def dist(self):
+        # return self.dist
+
+    # @dist.setter
+    # def dist(self, func):
+        # self.dist = func
+
+class Flow:
+    def __init__(self, distributions, points_per_phase):
+        self.trace = []
+        self.time = []
+        self.distributions = distributions
+
+        for dist in self.distributions:
+            # for i in points_per_phase:
+            self.trace.append(distribution.generate(points_per_phase))
+
+    @property
+    def size(self):
+        return len(self.trace)
+
+    @property
+    def trace(self):
+        return self.trace
+
+
+
+class Trace:
+    def __init__(self, num_flows, ):
+        self.flows = []
+        for _ in range(num_flows):
+            self.flows.append([])
+        gen_flows()
+
+    def gen_flows(self):
+        pass
+
+class Rack:
+    def __init__(self, num_nodes):
+        self.num_nodes = num_nodes
+
+        self.nodes = []
+
+        for _ in range(num_nodes):
+            self.nodes.append(Node(2))
+
+    @property
+    def cv(self):
+        pass
+        # return
+
+
 num_samples = 400
 num_phases = 20
 points_per_phase = 50
 # desire = float(input("enter desired corre:"))
-desire = .55
 
 def calculate_c(r):
     c = cholesky(r, lower=True)
@@ -85,6 +155,18 @@ r = np.array([
 fig, axes = plt.subplots(2,2)
 fig.subplots_adjust(wspace=0.5, hspace=.5)
 
+normal_func = lambda params, n: norm.rvs(loc=params['loc'], scale=params['scale'],size=n)
+normal_dist = Distribution({'loc':50, 'scale':5}, normal_func)
+print(normal_dist.generate(5))
+
+# each nic can support 0.3M new flows per minute
+# there is a distribution for # of new flows
+rack = Rack(5)
+
+
+print('done')
+sys.exit(0)
+
 for idx, loc1 in enumerate([50, 75]):
 # for idx, loc1 in enumerate([50]):
     std = 25
@@ -111,7 +193,7 @@ for idx, loc1 in enumerate([50, 75]):
         # x[0] = generate_points(means, 0, loc2)
         # x[1] = generate_points(means, 1, loc2)
         # x[1] = norm.rvs(loc=loc2, scale=std, size=num_phases*points_per_phase)
-        # print(correlation, loc2)
+        print(correlation, loc2)
         std = 1
         var1 = pow(std,2)
         var2 = pow(std,2)
@@ -141,12 +223,8 @@ for idx, loc1 in enumerate([50, 75]):
             print('dumping', desire)
             for idx, values in enumerate(correlated_x):
                 with open("trace_"+str(idx)+".txt",'w') as fi:
-                    fi.write(str(len(values)))
-                    fi.write('\n')
-                    fi.write(str(np.average(values)))
-                    fi.write('\n')
                     for v in values:
-                        fi.write(str(round(v))+"\n")
+                        fi.write(str(v)+"\n")
         # print(r)
         """
         if correlation == 0.9:
@@ -224,5 +302,6 @@ axes[0,1].legend()
 
 
 # plt.savefig('link_util (2 hosts).pdf', bbox_inches='tight')
-plt.savefig('test.png')
+plt.savefig('msft.png')
 # plt.show()
+

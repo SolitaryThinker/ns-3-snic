@@ -138,7 +138,7 @@ SnicWorkloadServer::StartApplication()
     if (m_outputFileName != "")
     {
         std::cout << m_outputFileName << std::endl;
-        m_outputFile.open(m_outputFileName);
+        m_outputFile.open(m_outputFileName, std::ofstream::app);
     }
 }
 

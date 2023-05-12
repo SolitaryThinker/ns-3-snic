@@ -57,7 +57,8 @@ main(int argc, char* argv[])
     std::vector<Ptr<AttributeValue>> values;
     values.push_back(Create<UintegerValue>(400));
     values.push_back(Create<UintegerValue>(500));
-    benchmark.AddVariable("PacketSize", values);
+    auto v = ExperimentVariable("PacketSize", MakeUintegerChecker<uint32_t>(), values);
+    benchmark.AddVariable("PacketSize", v);
 
     benchmark.Initialize();
     benchmark.Run();

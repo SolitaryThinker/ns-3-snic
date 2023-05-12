@@ -21,6 +21,7 @@ build_lib(
                  model/snic-scheduler.cc
                  utils/benchmark.cc
                  utils/experiment.cc
+                 utils/experiment-variable.cc
                  utils/simple-experiment.cc
                  utils/flow.cc
                  utils/linear-memory-modeler.cc
@@ -39,7 +40,7 @@ build_lib(
                  model/snic-scheduler.h
                  utils/benchmark.h
                  utils/simple-experiment.h
-                 #utils/experiment-variable.h
+                 utils/experiment-variable.h
                  utils/flow.h
                  utils/linear-memory-modeler.h
                  utils/memory-modeler.h

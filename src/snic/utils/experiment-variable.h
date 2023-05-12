@@ -5,37 +5,21 @@
 
 namespace ns3
 {
-template <typename T>
 class ExperimentVariable : public Object
 {
   public:
-    ExperimentVariable()
-    {
-    }
+    ExperimentVariable(std::string varName, Ptr<const AttributeChecker> checker);
 
-    void SetValues(std::vector<T> values)
-    {
-        m_values = values;
-    }
+    void SetValues(std::vector<Ptr<AttributeValue>> values);
 
-    std::vector<T> GetValues() const
-    {
-        return m_values;
-    }
+    std::vector<Ptr<AttributeValue>> GetValues() const;
 
-    T GetValue(uint64_t n) const
-    {
-        return m_values[n];
-    }
+    Ptr<AttributeValue> GetValue(uint64_t n) const;
 
   private:
-    std::vector<T> m_values;
-};
-
-class ExperimentVariableU32 : public ExperimentVariable<uint32_t>
-{
-  public:
-    ExperimentVariableU32();
+    std::string m_varName;
+    Ptr<const AttributeChecker> m_checker;
+    std::vector<Ptr<AttributeValue>> m_values;
 };
 
 } // namespace ns3
